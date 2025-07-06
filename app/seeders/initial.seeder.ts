@@ -15,12 +15,14 @@ export class ContentSeeder {
       const testimonialRepo = AppDataSource.getRepository(Testimonial);
       const faqRepo = AppDataSource.getRepository(FAQ);
 
-      // Clear existing data
-      await contentItemRepo.delete({});
-      await testimonialRepo.delete({});
-      await faqRepo.delete({});
-      await contentSectionRepo.delete({});
+      // Clear existing data using query builder to avoid empty criteria error
+      console.log('Clearing existing data...');
+      await contentItemRepo.createQueryBuilder().delete().execute();
+      await testimonialRepo.createQueryBuilder().delete().execute();
+      await faqRepo.createQueryBuilder().delete().execute();
+      await contentSectionRepo.createQueryBuilder().delete().execute();
 
+      console.log('Creating hero section...');
       // Create Hero Section
       const heroSection = await contentSectionRepo.save({
         section_key: 'hero',
@@ -34,6 +36,7 @@ export class ContentSeeder {
         display_order: 1
       });
 
+      console.log('Creating hero slides...');
       // Hero slides
       await contentItemRepo.save([
         {
@@ -71,6 +74,7 @@ export class ContentSeeder {
         }
       ]);
 
+      console.log('Creating about section...');
       // Create About Section
       const aboutSection = await contentSectionRepo.save({
         section_key: 'about',
@@ -83,6 +87,7 @@ export class ContentSeeder {
         display_order: 2
       });
 
+      console.log('Creating partner items...');
       // Partners
       for (let i = 1; i <= 5; i++) {
         await contentItemRepo.save({
@@ -94,6 +99,7 @@ export class ContentSeeder {
         });
       }
 
+      console.log('Creating features section...');
       // Create Features Section
       const featuresSection = await contentSectionRepo.save({
         section_key: 'features',
@@ -102,6 +108,7 @@ export class ContentSeeder {
         display_order: 3
       });
 
+      console.log('Creating feature items...');
       // Features items
       await contentItemRepo.save([
         {
@@ -142,6 +149,7 @@ export class ContentSeeder {
         }
       ]);
 
+      console.log('Creating events section...');
       // Create Events Section
       const eventsSection = await contentSectionRepo.save({
         section_key: 'events',
@@ -153,6 +161,7 @@ export class ContentSeeder {
         display_order: 4
       });
 
+      console.log('Creating event items...');
       // Event items
       await contentItemRepo.save([
         {
@@ -193,6 +202,7 @@ export class ContentSeeder {
         }
       ]);
 
+      console.log('Creating testimonials...');
       // Create Testimonials
       const testimonials = [
         {
@@ -248,6 +258,7 @@ export class ContentSeeder {
 
       await testimonialRepo.save(testimonials);
 
+      console.log('Creating FAQs...');
       // Create FAQs
       const faqs = [
         {
