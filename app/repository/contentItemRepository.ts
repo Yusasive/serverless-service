@@ -1,34 +1,38 @@
 import { Repository } from 'typeorm';
 import { ContentItem } from '../models/entities/ContentItem';
-import { AppDataSource } from '../config/database';
+import { dataSource } from '../config/database';
 
 export class ContentItemRepository {
   private repository: Repository<ContentItem>;
 
   constructor() {
-    this.repository = AppDataSource.getRepository(ContentItem);
+    if (!dataSource) {
+      throw new Error("DataSource is not initialized");
+    }
+
+    this.repository = dataSource.getRepository(ContentItem);
   }
 
   async findAll(): Promise<ContentItem[]> {
     return await this.repository.find({
       where: { is_active: true },
-      order: { display_order: 'ASC', created_at: 'ASC' },
-      relations: ['section'],
+      order: { display_order: "ASC", created_at: "ASC" },
+      relations: ["section"],
     });
   }
 
   async findBySectionId(section_id: string): Promise<ContentItem[]> {
     return await this.repository.find({
       where: { section_id, is_active: true },
-      order: { display_order: 'ASC', created_at: 'ASC' },
-      relations: ['section'],
+      order: { display_order: "ASC", created_at: "ASC" },
+      relations: ["section"],
     });
   }
 
   async findById(id: string): Promise<ContentItem | null> {
     return await this.repository.findOne({
       where: { id },
-      relations: ['section'],
+      relations: ["section"],
     });
   }
 
@@ -37,7 +41,10 @@ export class ContentItemRepository {
     return await this.repository.save(contentItem);
   }
 
-  async update(id: string, data: Partial<ContentItem>): Promise<ContentItem | null> {
+  async update(
+    id: string,
+    data: Partial<ContentItem>
+  ): Promise<ContentItem | null> {
     await this.repository.update(id, data);
     return await this.findById(id);
   }
@@ -49,8 +56,8 @@ export class ContentItemRepository {
 
   async findAllForAdmin(): Promise<ContentItem[]> {
     return await this.repository.find({
-      order: { display_order: 'ASC', created_at: 'ASC' },
-      relations: ['section'],
+      order: { display_order: "ASC", created_at: "ASC" },
+      relations: ["section"],
     });
   }
 }

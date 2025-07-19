@@ -1,18 +1,22 @@
 import { Repository } from 'typeorm';
 import { ContentSection } from '../models/entities/ContentSection';
-import { AppDataSource } from '../config/database';
+import { dataSource } from '../config/database';
 
 export class ContentSectionRepository {
   private repository: Repository<ContentSection>;
 
   constructor() {
-    this.repository = AppDataSource.getRepository(ContentSection);
+    if (!dataSource) {
+      throw new Error("DataSource is not initialized");
+    }
+
+    this.repository = dataSource.getRepository(ContentSection);
   }
 
   async findAll(): Promise<ContentSection[]> {
     return await this.repository.find({
       where: { is_active: true },
-      order: { display_order: 'ASC', created_at: 'ASC' },
+      order: { display_order: "ASC", created_at: "ASC" },
     });
   }
 
@@ -33,7 +37,10 @@ export class ContentSectionRepository {
     return await this.repository.save(contentSection);
   }
 
-  async update(id: string, data: Partial<ContentSection>): Promise<ContentSection | null> {
+  async update(
+    id: string,
+    data: Partial<ContentSection>
+  ): Promise<ContentSection | null> {
     await this.repository.update(id, data);
     return await this.findById(id);
   }
@@ -45,7 +52,7 @@ export class ContentSectionRepository {
 
   async findAllForAdmin(): Promise<ContentSection[]> {
     return await this.repository.find({
-      order: { display_order: 'ASC', created_at: 'ASC' },
+      order: { display_order: "ASC", created_at: "ASC" },
     });
   }
 }

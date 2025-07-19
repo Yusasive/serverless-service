@@ -1,18 +1,22 @@
 import { Repository } from 'typeorm';
 import { Testimonial } from '../models/entities/Testimonial';
-import { AppDataSource } from '../config/database';
+import { dataSource } from '../config/database';
 
 export class TestimonialRepository {
   private repository: Repository<Testimonial>;
 
   constructor() {
-    this.repository = AppDataSource.getRepository(Testimonial);
+    if (!dataSource) {
+      throw new Error("DataSource is not initialized");
+    }
+
+    this.repository = dataSource.getRepository(Testimonial);
   }
 
   async findAll(): Promise<Testimonial[]> {
     return await this.repository.find({
       where: { is_active: true },
-      order: { display_order: 'ASC', created_at: 'ASC' },
+      order: { display_order: "ASC", created_at: "ASC" },
     });
   }
 
@@ -27,7 +31,10 @@ export class TestimonialRepository {
     return await this.repository.save(testimonial);
   }
 
-  async update(id: string, data: Partial<Testimonial>): Promise<Testimonial | null> {
+  async update(
+    id: string,
+    data: Partial<Testimonial>
+  ): Promise<Testimonial | null> {
     await this.repository.update(id, data);
     return await this.findById(id);
   }
@@ -39,7 +46,7 @@ export class TestimonialRepository {
 
   async findAllForAdmin(): Promise<Testimonial[]> {
     return await this.repository.find({
-      order: { display_order: 'ASC', created_at: 'ASC' },
+      order: { display_order: "ASC", created_at: "ASC" },
     });
   }
 }

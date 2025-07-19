@@ -1,14 +1,18 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { ContentController } from "../controllers/ContentController";
-import { AppDataSource } from "../config/database";
+import { dataSource } from "../config/database";
 import "reflect-metadata";
 
 let isInitialized = false;
 
 async function initializeDatabase() {
   if (!isInitialized) {
+    if (!dataSource) {
+      throw new Error("DataSource is not defined.");
+    }
+
     try {
-      await AppDataSource.initialize();
+      await dataSource.initialize();
       console.log("Database connected successfully");
       isInitialized = true;
     } catch (error) {
@@ -18,22 +22,18 @@ async function initializeDatabase() {
   }
 }
 
-// Helper function to extract HTTP method from various event structures
 function extractHttpMethod(event: any): string {
-  // Try multiple possible locations for HTTP method
   const method =
     event.httpMethod ||
     event.requestContext?.http?.method ||
     event.requestContext?.httpMethod ||
     event.method ||
-    "GET"; // Default fallback
+    "GET";
 
   return method.toUpperCase();
 }
 
-// Helper function to extract path from various event structures
 function extractPath(event: any): string {
-  // Try multiple possible locations for path
   let path =
     event.path ||
     event.rawPath ||
@@ -42,27 +42,21 @@ function extractPath(event: any): string {
     event.resource ||
     "";
 
-  // If still no path, try to construct from headers or other sources
   if (!path && event.headers) {
-    // Sometimes the path might be in the host header or other places
     const host = event.headers.host || event.headers.Host;
     if (host) {
-      // This is a fallback - in development, we might need to infer the path
-      path = "/content"; // Default to base content path
+      path = "/content";
     }
   }
 
   return path;
 }
 
-// Helper function to extract path parameters
 function extractPathParameters(path: string): Record<string, string> {
   const pathParams: Record<string, string> = {};
 
-  // Remove /content prefix if present
   const cleanPath = path.replace(/^\/content/, "");
 
-  // Extract ID from various patterns
   const patterns = [
     { regex: /^\/sections\/([^\/]+)$/, param: "id" },
     { regex: /^\/items\/([^\/]+)$/, param: "id" },
@@ -82,7 +76,6 @@ function extractPathParameters(path: string): Record<string, string> {
   return pathParams;
 }
 
-// Helper function to create a standardized event object
 function createStandardEvent(originalEvent: any): APIGatewayProxyEvent {
   const httpMethod = extractHttpMethod(originalEvent);
   const fullPath = extractPath(originalEvent);
@@ -112,7 +105,6 @@ export const handler = async (
   try {
     console.log("Raw incoming event:", JSON.stringify(originalEvent, null, 2));
 
-    // Create standardized event object
     const event = createStandardEvent(originalEvent);
 
     console.log("Processed event:", {
@@ -122,7 +114,6 @@ export const handler = async (
       headers: Object.keys(event.headers || {}),
     });
 
-    // Handle CORS preflight request
     if (event.httpMethod === "OPTIONS") {
       return {
         statusCode: 200,
@@ -142,7 +133,6 @@ export const handler = async (
     const controller = new ContentController();
     const { httpMethod, pathParameters } = event;
 
-    // Clean path for routing (remove /content prefix)
     const routePath = (event.path || "").replace(/^\/content/, "") || "";
 
     console.log("Routing:", { httpMethod, routePath, pathParameters });

@@ -1,25 +1,29 @@
 import { Repository } from 'typeorm';
 import { FAQ } from '../models/entities/FAQ';
-import { AppDataSource } from '../config/database';
+import { dataSource } from '../config/database';
 
 export class FAQRepository {
   private repository: Repository<FAQ>;
 
   constructor() {
-    this.repository = AppDataSource.getRepository(FAQ);
+    if (!dataSource) {
+      throw new Error("DataSource is not initialized");
+    }
+
+    this.repository = dataSource.getRepository(FAQ);
   }
 
   async findAll(): Promise<FAQ[]> {
     return await this.repository.find({
       where: { is_active: true },
-      order: { category: 'ASC', display_order: 'ASC', created_at: 'ASC' },
+      order: { category: "ASC", display_order: "ASC", created_at: "ASC" },
     });
   }
 
   async findByCategory(category: string): Promise<FAQ[]> {
     return await this.repository.find({
       where: { category, is_active: true },
-      order: { display_order: 'ASC', created_at: 'ASC' },
+      order: { display_order: "ASC", created_at: "ASC" },
     });
   }
 
@@ -46,17 +50,17 @@ export class FAQRepository {
 
   async findAllForAdmin(): Promise<FAQ[]> {
     return await this.repository.find({
-      order: { category: 'ASC', display_order: 'ASC', created_at: 'ASC' },
+      order: { category: "ASC", display_order: "ASC", created_at: "ASC" },
     });
   }
 
   async getCategories(): Promise<string[]> {
     const result = await this.repository
-      .createQueryBuilder('faq')
-      .select('DISTINCT faq.category', 'category')
-      .where('faq.is_active = :isActive', { isActive: true })
+      .createQueryBuilder("faq")
+      .select("DISTINCT faq.category", "category")
+      .where("faq.is_active = :isActive", { isActive: true })
       .getRawMany();
-    
-    return result.map(item => item.category);
+
+    return result.map((item) => item.category);
   }
 }

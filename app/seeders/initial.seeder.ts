@@ -1,4 +1,4 @@
-import { AppDataSource } from "../config/database";
+import { dataSource } from "../config/database";
 import { ContentSection } from "../models/entities/ContentSection";
 import { ContentItem } from "../models/entities/ContentItem";
 import { Testimonial } from "../models/entities/Testimonial";
@@ -7,13 +7,17 @@ import { FAQ } from "../models/entities/FAQ";
 export class ContentSeeder {
   static async run() {
     try {
-      await AppDataSource.initialize();
+      if (!dataSource) {
+        throw new Error("Database not initialized");
+      }
+
+      await dataSource.initialize();
       console.log("Starting content seeding...");
 
-      const contentSectionRepo = AppDataSource.getRepository(ContentSection);
-      const contentItemRepo = AppDataSource.getRepository(ContentItem);
-      const testimonialRepo = AppDataSource.getRepository(Testimonial);
-      const faqRepo = AppDataSource.getRepository(FAQ);
+      const contentSectionRepo = dataSource.getRepository(ContentSection);
+      const contentItemRepo = dataSource.getRepository(ContentItem);
+      const testimonialRepo = dataSource.getRepository(Testimonial);
+      const faqRepo = dataSource.getRepository(FAQ);
 
       // Clear existing data using query builder to avoid empty criteria error
       console.log("Clearing existing data...");
@@ -44,7 +48,7 @@ export class ContentSeeder {
           title: "Celebrate",
           description:
             "Showcase, Connect, and Discover – A hub of innovation across industries.",
-          image_url: "/images/background3.png",
+          image_url: "/images/background4.jpg",
           metadata: {
             highlight: "Life's Special",
             subtitle: "Moments",
@@ -56,7 +60,7 @@ export class ContentSeeder {
           title: "Empower",
           description:
             "Network with pioneers and unlock the future of trade and industry.",
-          image_url: "/images/background1.png",
+          image_url: "/images/background1.jpg",
           metadata: {
             highlight: "Business Leaders",
             subtitle: "In Africa",
@@ -68,7 +72,7 @@ export class ContentSeeder {
           title: "Innovate",
           description:
             "Collaborate and create impact across communities and markets.",
-          image_url: "/images/background2.png",
+          image_url: "/images/background8.jpg",
           metadata: {
             highlight: "With Bold Ideas",
             subtitle: "That Shape Tomorrow",
@@ -177,7 +181,7 @@ export class ContentSeeder {
           title: "Events That Leave a Impression",
           description:
             "A personal portfolio is a curated collection of an individual's professional work",
-          image_url: "/images/background1.png",
+          image_url: "/images/background5.jpg",
           metadata: {
             date: "7th November 2025",
             time: "10 AM to 10 PM",
@@ -190,7 +194,7 @@ export class ContentSeeder {
           title: "Sparkle & Shine on Celebrations",
           description:
             "A personal portfolio is a curated collection of an individual's professional work",
-          image_url: "/images/background2.png",
+          image_url: "/images/background6.jpg",
           metadata: {
             date: "8th November 2025",
             time: "10 AM to 10 PM",
@@ -203,7 +207,7 @@ export class ContentSeeder {
           title: "Sparkle & Shine Events",
           description:
             "A personal portfolio is a curated collection of an individual's professional work",
-          image_url: "/images/background3.png",
+          image_url: "/images/background7.jpg",
           metadata: {
             date: "9th November 2025",
             time: "10 AM to 10 PM",
@@ -430,8 +434,8 @@ export class ContentSeeder {
       console.error("Error seeding content:", error);
       throw error;
     } finally {
-      if (AppDataSource.isInitialized) {
-        await AppDataSource.destroy();
+      if (dataSource && dataSource.isInitialized) {
+        await dataSource.destroy();
       }
     }
   }
