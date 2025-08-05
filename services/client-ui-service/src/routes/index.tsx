@@ -18,6 +18,8 @@ import Contact from '@/pages/Contact'
 import ForgetPassword from '@/pages/Authentication/ForgetPassword'
 import ResetPassword from '@/pages/Authentication/ResetPassword'
 import Verification from '@/pages/Authentication/Verification'
+import Events from "../pages/Events";
+import EventDetails from "../pages/EventDetails";
 import FAQ from "@/pages/FAQ";
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -142,6 +144,19 @@ export const faqRoute: RouteObject = {
   element: <FAQ />,
 }
 
+//events route
+export const eventsRoute: RouteObject = {
+  path: '/events',
+  element: <Events />,
+}
+
+//event details route
+export const eventDetailsRoute: RouteObject = {
+  path: '/events/:id',
+  element: <EventDetails />,
+}
+
+
 // Login route
 export const loginRoute: RouteObject = {
   path: '/login',
@@ -201,6 +216,8 @@ const routes: RouteObject[] = [
   aboutRoute,
   contactRoute,
   faqRoute,
+  eventsRoute,
+  eventDetailsRoute,
   registerRoute,
   selectRoleRoute,
   qrCodeDisplayRoute,

@@ -12,7 +12,7 @@ import WebsiteContent from "@/pages/Dashboard/Content/WebsiteContent";
 import TestimonialsManagement from "@/pages/Dashboard/Content/TestimonialsManagement";
 import FAQsManagement from "@/pages/Dashboard/Content/FAQsManagement";
 import AboutPageManagement from "@/pages/Dashboard/Content/AboutPageManagement";
-
+import EventsManagement from "@/pages/Dashboard/Content/EventsManagement";
 import Booths from "@/pages/Dashboard/Booths/Booths";
 import Exhibitors from "@/pages/Dashboard/Exhibitors/Exhibitors";
 import Transactions from "@/pages/Dashboard/Transactions/Transaction";
@@ -70,6 +70,7 @@ export const dashboardRoutes: RouteObject[] = [
       { path: "content/testimonials", element: <TestimonialsManagement /> },
       { path: "content/faqs", element: <FAQsManagement /> },
       { path: "content/about", element: <AboutPageManagement /> },
+      { path: "content/events", element: <EventsManagement /> },
 
       // System
       {

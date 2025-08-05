@@ -7,7 +7,7 @@ const getContentServiceUrl = (): string => {
     import.meta.env.VITE_ENVIRONMENT === "dev" ||
     import.meta.env.VITE_ENVIRONMENT === "prod"
   ) {
-    return import.meta.env.VITE_SERVICE_BASE_URL;
+    return import.meta.env.VITE_SERVICE_BASE_URL + "/content";
   } else {
     return CONTENT_BASE_URL;
   }
@@ -373,6 +373,15 @@ export class ContentRepository {
     items: ContentItem[];
   }> {
     const response = await this.request("/public/section/about-page");
+    return response.data || { section: null, items: [] };
+  }
+
+  // Event Page Content
+  static async getEventsContent(): Promise<{
+    section: ContentSection | null;
+    items: ContentItem[];
+  }> {
+    const response = await this.request("/public/section/events");
     return response.data || { section: null, items: [] };
   }
 

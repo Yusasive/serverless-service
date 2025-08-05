@@ -193,15 +193,12 @@ functions:
 
 resources: 
   Resources:
-    PublicContentAPIMapping:
+     ContentAPIMapping:
       Type: AWS::ApiGatewayV2::ApiMapping
       Properties:
         ApiId: ${cf:${self:service}-${sls:stage}.HttpApiId}
         DomainName: ${self:provider.environment.API_DOMAIN_NAME}
         Stage: '$default'
-<<<<<<< HEAD
-        ApiMappingKey: content
-=======
         ApiMappingKey: public
 
     SectionsAPIMapping:
@@ -243,4 +240,3 @@ resources:
         DomainName: ${self:provider.environment.API_DOMAIN_NAME}
         Stage: '$default'
         ApiMappingKey: media
->>>>>>> 35bf6e2 (fix:image_url and contact, about and Footer CMSs)

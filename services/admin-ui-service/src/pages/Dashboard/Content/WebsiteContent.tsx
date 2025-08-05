@@ -61,8 +61,7 @@ const SECTION_CONFIGS = {
       "social_links",
     ],
     itemFields: [],
-    description:
-      "Footer section managed through dedicated Footer Management page - No items needed",
+    description: "No items needed",
     hideItems: true,
   },
 
@@ -70,8 +69,7 @@ const SECTION_CONFIGS = {
     name: "Contact Page",
     sectionFields: ["main_office", "support_office"],
     itemFields: [],
-    description:
-      "Contact page managed through dedicated Contact Page Management page - No items needed",
+    description: "No items needed",
     hideItems: true,
   },
   "about-page": {
@@ -84,8 +82,7 @@ const SECTION_CONFIGS = {
       "about_fair_content",
     ],
     itemFields: [],
-    description:
-      "About page managed through dedicated About Page Management page - No items needed",
+    description: "No items needed",
     hideItems: true,
   },
 };
@@ -483,8 +480,11 @@ const WebsiteContent: React.FC = () => {
   };
 
   const filteredSections = sections.filter((section) => {
-    // Hide about-page section from WebsiteContent management
-    if (section.section_key === "about-page") {
+    // Hide about-page and event sections from WebsiteContent management
+    if (
+      section.section_key === "about-page" ||
+      section.section_key === "events"
+    ) {
       return false;
     }
 
@@ -1216,8 +1216,9 @@ const WebsiteContent: React.FC = () => {
                 </p>
                 <p className="text-2xl font-bold text-gray-900">
                   {
-                    sections.filter((s) => s.section_key !== "about-page")
-                      .length
+                    sections.filter(
+                      (s) => !["about-page", "events"].includes(s.section_key)
+                    ).length
                   }
                 </p>
               </div>
@@ -1248,7 +1249,7 @@ const WebsiteContent: React.FC = () => {
                 <p className="text-2xl font-bold text-gray-900">
                   {
                     sections.filter(
-                      (s) => s.is_active && s.section_key !== "about-page"
+                      (s) => !["about-page", "events"].includes(s.section_key)
                     ).length
                   }
                 </p>
@@ -1281,7 +1282,10 @@ const WebsiteContent: React.FC = () => {
                       const section = sections.find(
                         (s) => s.id === item.section_id
                       );
-                      return section?.section_key !== "about-page";
+                      return (
+                        section &&
+                        !["about-page", "events"].includes(section.section_key)
+                      );
                     }).length
                   }
                 </p>

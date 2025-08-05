@@ -13,10 +13,10 @@ import {
   XMarkIcon,
   DocumentTextIcon,
   ChatBubbleLeftRightIcon,
-  // SpeakerWaveIcon,
+  CalendarDaysIcon,
   QuestionMarkCircleIcon,
   BanknotesIcon,
-  SpeakerWaveIcon,
+  InformationCircleIcon,
 } from "@heroicons/react/24/outline";
 
 type IconComponent = typeof ChartBarIcon;
@@ -78,11 +78,15 @@ const navigation: [NavItem, ...NavGroup[]] = [
         href: "/dashboard/content/faqs",
         icon: QuestionMarkCircleIcon,
       },
-
       {
         name: "About Us Page",
         href: "/dashboard/content/about",
-        icon: SpeakerWaveIcon,
+        icon: InformationCircleIcon,
+      },
+      {
+        name: "Events Page",
+        href: "/dashboard/content/events",
+        icon: CalendarDaysIcon,
       },
     ],
   },

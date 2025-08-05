@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { FaMapMarkerAlt, FaCalendarAlt } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 import {
   ContentItem,
   ContentRepository,
@@ -9,6 +10,7 @@ import {
 const EventSection: React.FC = () => {
   const [section, setSection] = useState<ContentSection | null>(null);
   const [events, setEvents] = useState<ContentItem[]>([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -21,7 +23,16 @@ const EventSection: React.FC = () => {
             const activeItems = res.items.filter(
               (item: ContentItem) => item.is_active
             );
-            setEvents(activeItems);
+
+            const sortedItems = activeItems
+              .sort((a, b) => {
+                const dateA = new Date(a.metadata?.date || a.created_at);
+                const dateB = new Date(b.metadata?.date || b.created_at);
+                return dateB.getTime() - dateA.getTime();
+              })
+              .slice(0, 3);
+
+            setEvents(sortedItems);
           } else {
             setSection(null);
             setEvents([]);
@@ -43,7 +54,7 @@ const EventSection: React.FC = () => {
         <div className="mb-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <p className="text-sm uppercase tracking-wider text-primary-900 font-semibold">
-              Event Schedule
+              Recent Events
             </p>
             <h2 className="text-4xl font-bold mt-2">
               {section.title || "Upcoming Events"}
@@ -55,7 +66,8 @@ const EventSection: React.FC = () => {
           {events.map((event) => (
             <div
               key={event.id}
-              className="bg-white rounded-xl shadow-md overflow-hidden flex flex-col md:flex-row"
+              className="bg-white rounded-xl shadow-md overflow-hidden flex flex-col md:flex-row hover:shadow-lg transition-shadow duration-300 cursor-pointer"
+              onClick={() => navigate(`/events/${event.id}`)}
             >
               <img
                 src={event.image_url}
@@ -69,19 +81,23 @@ const EventSection: React.FC = () => {
               <div className="md:w-1/4 border-t md:border-t-0 md:border-l border-gray-200 p-6 flex flex-col justify-center gap-4">
                 <div className="flex items-start gap-3">
                   <FaMapMarkerAlt className="text-primary-500 mt-1" />
-                  <span className="text-sm">
-                    {event.metadata?.location}
-                  </span>
+                  <span className="text-sm">{event.metadata?.location}</span>
                 </div>
                 <div className="flex items-start gap-3">
                   <FaCalendarAlt className="text-primary-500 mt-1" />
-                  <span className="text-sm">
-                    {event.metadata?.date}
-                  </span>
+                  <span className="text-sm">{event.metadata?.date}</span>
                 </div>
               </div>
             </div>
           ))}
+        </div>
+        <div className="mt-10 flex justify-center">
+          <button
+            onClick={() => navigate("/events")}
+            className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200"
+          >
+            View All Events →
+          </button>
         </div>
       </div>
     </section>
