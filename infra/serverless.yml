@@ -1,0 +1,537 @@
+service: infra
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'eu-west-1'}
+  environment:
+    DB_USER: ${ssm:/litf-${opt:stage, 'dev'}/db-user}
+    DB_PASSWORD: ${ssm:/litf-${opt:stage, 'dev'}/db-pass}
+    API_DOMAIN_NAME: ${ssm:/litf-${opt:stage, 'dev'}/base-domain}
+    API_DOMAIN_CERTIFICATE_ARN: ${ssm:/litf-${opt:stage, 'dev'}/api-acm-certificate-arn}
+
+custom:
+  stage: ${self:provider.stage}
+  client:
+    bucketName: litf-${self:provider.stage}-frontend
+    mediaBucketName: litf-${self:provider.stage}-media
+    distributionFolder: dist
+    indexDocument: index.html
+    errorDocument: index.html
+  cloudfrontInvalidate:
+  - distributionIdKey: CloudFrontDistributionId
+    paths:
+    - "/*"
+    - "/media/*"
+  build:
+    env:
+      VITE_SERVICE_BASE_URL: ${ssm:/litf-${opt:stage, 'dev'}/base-url}
+      VITE_FRONTEND_URL: ${ssm:/litf-${opt:stage, 'dev'}/frontend-url}
+      VITE_ENVIRONMENT: ${opt:stage, 'dev'}
+
+resources:
+  Parameters:
+    Stage:
+      Type: String
+      Default: ${self:custom.stage}
+    VpcCidr:
+      Type: String
+      Default: 10.0.0.0/16
+    PublicSubnetCidr:
+      Type: String
+      Default: 10.0.1.0/24
+    PrivateSubnet1Cidr:
+      Type: String
+      Default: 10.0.2.0/24
+    PrivateSubnet2Cidr:
+      Type: String
+      Default: 10.0.3.0/24
+    DBUsername:
+      Type: String
+      NoEcho: true
+      Default: ${self:provider.environment.DB_USER}
+    DBPassword:
+      Type: String
+      NoEcho: true
+      MinLength: 8
+      Default: ${self:provider.environment.DB_PASSWORD}
+    Environment:
+      Type: String
+      Default: ${self:custom.stage}
+
+  Conditions:
+    IsDev: !Equals [ !Ref Stage, "dev" ]
+    IsProd: !Not [ !Equals [ !Ref Stage, "dev" ] ]
+
+  Resources:
+    VPC:
+      Type: AWS::EC2::VPC
+      Properties:
+        CidrBlock: !Ref VpcCidr
+        EnableDnsHostnames: true
+        EnableDnsSupport: true
+        Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-Litf-Aurora-Vpc
+
+    InternetGateway:
+      Type: AWS::EC2::InternetGateway
+      Properties:
+        Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-Litf-InternetGateway
+
+    AttachGateway:
+      Type: AWS::EC2::VPCGatewayAttachment
+      Properties:
+        VpcId: !Ref VPC
+        InternetGatewayId: !Ref InternetGateway
+
+    PublicSubnet:
+      Type: AWS::EC2::Subnet
+      Properties:
+        VpcId: !Ref VPC
+        CidrBlock: !Ref PublicSubnetCidr
+        AvailabilityZone: !Select [ 0, !GetAZs '' ]
+        MapPublicIpOnLaunch: true
+        Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-Litf-Public-Subnet
+
+    PrivateSubnet1:
+      Type: AWS::EC2::Subnet
+      Properties:
+        VpcId: !Ref VPC
+        CidrBlock: !Ref PrivateSubnet1Cidr
+        AvailabilityZone: !Select [ 0, !GetAZs '' ]
+        MapPublicIpOnLaunch: false
+        Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-Litf-Private-Subnet-1
+
+    PrivateSubnet2:
+      Type: AWS::EC2::Subnet
+      Properties:
+        VpcId: !Ref VPC
+        CidrBlock: !Ref PrivateSubnet2Cidr
+        AvailabilityZone: !Select [ 1, !GetAZs '' ]
+        MapPublicIpOnLaunch: false
+        Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-Litf-Private-Subnet-2
+
+    PublicRouteTable:
+      Type: AWS::EC2::RouteTable
+      Properties:
+        VpcId: !Ref VPC
+
+    PublicRoute:
+      Type: AWS::EC2::Route
+      DependsOn: AttachGateway
+      Properties:
+        RouteTableId: !Ref PublicRouteTable
+        DestinationCidrBlock: 0.0.0.0/0
+        GatewayId: !Ref InternetGateway
+
+    PublicSubnetRouteTableAssociation:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        SubnetId: !Ref PublicSubnet
+        RouteTableId: !Ref PublicRouteTable
+
+    EIP:
+      Type: AWS::EC2::EIP
+      DependsOn: AttachGateway
+      Properties:
+        Domain: vpc
+
+    NATGateway:
+      Type: AWS::EC2::NatGateway
+      Properties:
+        AllocationId: !GetAtt EIP.AllocationId
+        SubnetId: !Ref PublicSubnet
+
+    PrivateRouteTable:
+      Type: AWS::EC2::RouteTable
+      Properties:
+        VpcId: !Ref VPC
+
+    PrivateRoute:
+      Type: AWS::EC2::Route
+      Properties:
+        RouteTableId: !Ref PrivateRouteTable
+        DestinationCidrBlock: 0.0.0.0/0
+        NatGatewayId: !Ref NATGateway
+
+    PrivateSubnet1RouteTableAssociation:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        SubnetId: !Ref PrivateSubnet1
+        RouteTableId: !Ref PrivateRouteTable
+
+    PrivateSubnet2RouteTableAssociation:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        SubnetId: !Ref PrivateSubnet2
+        RouteTableId: !Ref PrivateRouteTable
+
+    DBSubnetGroup:
+      Type: AWS::RDS::DBSubnetGroup
+      Properties:
+        DBSubnetGroupName: !Sub ${Environment}Aurora-Subnet-Group
+        DBSubnetGroupDescription: LITF Aurora DB Subnet Group
+        SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+        Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-Litf-DB-Subnet-Group
+
+    DBSecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupDescription: Enable access to Aurora PostgreSQL
+        VpcId: !Ref VPC
+        SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          CidrIp: 0.0.0.0/0
+        Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-Litf-Aurora-Security-Group
+
+    # DEV: Provisioned Aurora Cluster + t3.small instance 
+    DevDBInstance:
+      Condition: IsDev
+      Type: AWS::RDS::DBInstance
+      Properties:
+        Engine: postgres
+        DBInstanceIdentifier: !Sub ${Environment}-postgres-db
+        DBInstanceClass: db.t3.micro
+        MasterUsername: !Ref DBUsername
+        MasterUserPassword: !Ref DBPassword
+        DBSubnetGroupName: !Ref DBSubnetGroup
+        VPCSecurityGroups:
+        - !Ref DBSecurityGroup
+        AllocatedStorage: 20
+        StorageEncrypted: true
+        PubliclyAccessible: false
+
+    # PROD: Serverless v2 Aurora Cluster + serverless instance 
+    ProdDBCluster:
+      Condition: IsProd
+      Type: AWS::RDS::DBCluster
+      Properties:
+        Engine: aurora-postgresql
+        EngineMode: provisioned
+        DBClusterIdentifier: !Sub ${Environment}-aurora-postgres-cluster
+        MasterUsername: !Ref DBUsername
+        MasterUserPassword: !Ref DBPassword
+        DBSubnetGroupName: !Ref DBSubnetGroup
+        VpcSecurityGroupIds:
+        - !Ref DBSecurityGroup
+        EngineVersion: "15.4"
+        StorageEncrypted: true
+        ServerlessV2ScalingConfiguration:
+          MinCapacity: 0.5
+          MaxCapacity: 4
+        EnableHttpEndpoint: true
+        DeletionProtection: false
+
+    ProdDBInstance:
+      Condition: IsProd
+      Type: AWS::RDS::DBInstance
+      Properties:
+        DBClusterIdentifier: !Ref ProdDBCluster
+        DBInstanceClass: db.serverless
+        Engine: aurora-postgresql
+        PubliclyAccessible: false
+
+    # Custom domain setup
+    APIDomainName:
+      Type: AWS::ApiGatewayV2::DomainName
+      Properties:
+        DomainName: ${self:provider.environment.API_DOMAIN_NAME}
+        DomainNameConfigurations:
+        - CertificateArn: ${self:provider.environment.API_DOMAIN_CERTIFICATE_ARN}
+          EndpointType: REGIONAL
+          SecurityPolicy: TLS_1_2
+
+    #Client UI Resources
+    FrontendBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.client.bucketName}
+        WebsiteConfiguration:
+          IndexDocument: index.html
+          ErrorDocument: index.html
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: false
+          BlockPublicPolicy: false
+          IgnorePublicAcls: false
+          RestrictPublicBuckets: false
+
+    # Media S3 Bucket
+    MediaBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.client.mediaBucketName}
+        CorsConfiguration:
+          CorsRules:
+          - AllowedOrigins: [ '*' ]
+            AllowedHeaders: [ '*' ]
+            AllowedMethods: [ GET, PUT, POST, DELETE, HEAD ]
+            MaxAge: 3000
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: false
+          BlockPublicPolicy: false
+          IgnorePublicAcls: false
+          RestrictPublicBuckets: false
+
+    # S3 Policies
+    FrontendBucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket: !Ref FrontendBucket
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Principal: "*"
+            Action: s3:GetObject
+            Resource: !Join [ "", [ "arn:aws:s3:::", !Ref FrontendBucket, "/*" ] ]
+
+    MediaBucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket: !Ref MediaBucket
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Principal: "*"
+            Action: s3:GetObject
+            Resource: !Join [ "", [ "arn:aws:s3:::", !Ref MediaBucket, "/*" ] ]
+
+    # CloudFront Distribution
+    CloudFrontDistribution:
+      Type: AWS::CloudFront::Distribution
+      Properties:
+        DistributionConfig:
+          Enabled: true
+          DefaultRootObject: index.html
+          Origins:
+          - DomainName: !Sub '${FrontendBucket}.s3-website.${AWS::Region}.amazonaws.com'
+            Id: S3Origin
+            CustomOriginConfig:
+              HTTPPort: 80
+              HTTPSPort: 443
+              OriginProtocolPolicy: http-only
+          - DomainName: !GetAtt MediaBucket.RegionalDomainName
+            Id: MediaS3Origin
+            S3OriginConfig: {}
+          DefaultCacheBehavior:
+            TargetOriginId: S3Origin
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [ GET, HEAD ]
+            CachedMethods: [ GET, HEAD ]
+            ForwardedValues:
+              QueryString: false
+              Cookies:
+                Forward: all
+                WhitelistedNames:
+                - session
+                - token
+            Compress: true
+
+          CacheBehaviors:
+          - PathPattern: /media/*
+            TargetOriginId: MediaS3Origin
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [ GET, HEAD ]
+            CachedMethods: [ GET, HEAD ]
+            ForwardedValues:
+              QueryString: false
+              Cookies:
+                Forward: none
+            Compress: true
+            MinTTL: 0
+            DefaultTTL: 3600
+            MaxTTL: 86400
+
+          - PathPattern: /admin/*
+            TargetOriginId: S3Origin
+            ViewerProtocolPolicy: redirect-to-https
+            Compress: true
+            AllowedMethods: [ GET, HEAD ]
+            CachedMethods: [ GET, HEAD ]
+            ForwardedValues:
+              QueryString: false
+              Cookies:
+                Forward: all
+                WhitelistedNames:
+                - session
+                - token
+
+          CustomErrorResponses:
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+            ErrorCachingMinTTL: 0
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+            ErrorCachingMinTTL: 0
+
+          PriceClass: PriceClass_100
+          Aliases:
+          - ${ssm:/litf-${opt:stage, 'dev'}/acm-alias}
+          ViewerCertificate:
+            AcmCertificateArn: ${ssm:/litf-${opt:stage, 'dev'}/acm-certificate-arn}
+            SslSupportMethod: sni-only
+            MinimumProtocolVersion: TLSv1.2_2021
+
+    #Admin UI Resources
+    AdminFrontendBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: litf-${self:provider.stage}-admin-frontend
+        WebsiteConfiguration:
+          IndexDocument: index.html
+          ErrorDocument: index.html
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: false
+          BlockPublicPolicy: false
+          IgnorePublicAcls: false
+          RestrictPublicBuckets: false
+
+    # S3 Policies
+    AdminFrontendBucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket: !Ref AdminFrontendBucket
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Principal: "*"
+            Action: s3:GetObject
+            Resource: !Join [ "", [ "arn:aws:s3:::", !Ref AdminFrontendBucket, "/*" ] ]
+
+    AdminCloudFrontDistribution:
+      Type: AWS::CloudFront::Distribution
+      Properties:
+        DistributionConfig:
+          Enabled: true
+          DefaultRootObject: index.html
+          Origins:
+          - DomainName: !Sub '${AdminFrontendBucket}.s3-website.${AWS::Region}.amazonaws.com'
+            Id: S3Origin
+            CustomOriginConfig:
+              HTTPPort: 80
+              HTTPSPort: 443
+              OriginProtocolPolicy: http-only
+          - DomainName: !GetAtt MediaBucket.RegionalDomainName
+            Id: MediaS3Origin
+            S3OriginConfig: {}
+          DefaultCacheBehavior:
+            TargetOriginId: S3Origin
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [ GET, HEAD ]
+            CachedMethods: [ GET, HEAD ]
+            ForwardedValues:
+              QueryString: false
+              Cookies:
+                Forward: all
+                WhitelistedNames:
+                - session
+                - token
+            Compress: true
+
+          CacheBehaviors:
+          - PathPattern: /media/*
+            TargetOriginId: MediaS3Origin
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [ GET, HEAD ]
+            CachedMethods: [ GET, HEAD ]
+            ForwardedValues:
+              QueryString: false
+              Cookies:
+                Forward: none
+            Compress: true
+            MinTTL: 0
+            DefaultTTL: 3600
+            MaxTTL: 86400
+
+          - PathPattern: /admin/*
+            TargetOriginId: S3Origin
+            ViewerProtocolPolicy: redirect-to-https
+            Compress: true
+            AllowedMethods: [ GET, HEAD ]
+            CachedMethods: [ GET, HEAD ]
+            ForwardedValues:
+              QueryString: false
+              Cookies:
+                Forward: all
+                WhitelistedNames:
+                - session
+                - token
+
+          CustomErrorResponses:
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+            ErrorCachingMinTTL: 0
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+            ErrorCachingMinTTL: 0
+
+          PriceClass: PriceClass_100
+          Aliases:
+          - ${ssm:/litf-${opt:stage, 'dev'}/admin-acm-alias}
+          ViewerCertificate:
+            AcmCertificateArn: ${ssm:/litf-${opt:stage, 'dev'}/admin-acm-certificate-arn}
+            SslSupportMethod: sni-only
+            MinimumProtocolVersion: TLSv1.2_2021
+
+  Outputs:
+    DBEndpoint:
+      Description: The endpoint address of the DB (dev or prod)
+      Value: !If [ IsDev, !GetAtt DevDBInstance.Endpoint.Address, !GetAtt ProdDBCluster.Endpoint.Address ]
+    VPCId:
+      Description: Created VPC ID
+      Value: !Ref VPC
+    CloudFrontDistributionId:
+      Description: CloudFront Distribution ID for plugin
+      Value: !Ref CloudFrontDistribution
+      Export:
+        Name: litf-${self:provider.stage}-CloudFrontDistributionId
+    CloudFrontDomainName:
+      Value: !GetAtt CloudFrontDistribution.DomainName
+      Export:
+        Name: litf-${self:provider.stage}-CloudFrontDomainName
+    FrontendBucketName:
+      Value: !Ref FrontendBucket
+      Export:
+        Name: litf-${self:provider.stage}-FrontendBucketName
+    AdminCloudFrontDistributionId:
+      Description: CloudFront Distribution ID for plugin
+      Value: !Ref AdminCloudFrontDistribution
+      Export:
+        Name: litf-${self:provider.stage}-AdminCloudFrontDistributionId
+    AdminCloudFrontDomainName:
+      Value: !GetAtt AdminCloudFrontDistribution.DomainName
+      Export:
+        Name: litf-${self:provider.stage}-AdminCloudFrontDomainName
+    AdminFrontendBucketName:
+      Value: !Ref AdminFrontendBucket
+      Export:
+        Name: litf-${self:provider.stage}-AdminFrontendBucketName
+    MediaBucketName:
+      Value: !Ref MediaBucket
+      Export:
+        Name: litf-${self:provider.stage}-MediaBucketName

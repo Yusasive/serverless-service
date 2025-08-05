@@ -1,0 +1,27 @@
+service: init-db
+frameworkVersion: '4'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'eu-west-1'}
+  vpc:
+    subnetIds:
+      - ${ssm:/litf-${opt:stage, 'dev'}/subnet1-Id}
+      - ${ssm:/litf-${opt:stage, 'dev'}/subnet2-Id}
+    securityGroupIds:
+      - ${ssm:/litf-${opt:stage, 'dev'}/security-group-Id}
+  environment:
+    DB_HOST: ${ssm:/litf-${opt:stage, 'dev'}/db-host}
+    DB_PORT: ${ssm:/litf-${opt:stage, 'dev'}/db-port}
+    DB_NAME: ${ssm:/litf-${opt:stage, 'dev'}/payment-service/db-name}
+    DB_USER: ${ssm:/litf-${opt:stage, 'dev'}/db-user}
+    DB_PASSWORD: ${ssm:/litf-${opt:stage, 'dev'}/db-pass} 
+
+functions:
+  func:
+    handler: index.handler
+    
+
+  
