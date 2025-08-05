@@ -1,0 +1,123 @@
+service: content-service
+frameworkVersion: "4"
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'us-east-1'}
+  timeout: 30
+  memorySize: 512
+  httpApi:
+    cors:
+      allowedOrigins:
+        - http://localhost:3010
+        - http://localhost:3011
+      allowedMethods:
+        - GET
+        - POST
+        - PUT
+        - PATCH
+        - DELETE
+        - OPTIONS
+      allowedHeaders:
+        - Content-Type
+        - Authorization
+        - X-Amz-Date
+        - X-Api-Key
+        - X-Amz-Security-Token
+        - X-Requested-With
+      allowCredentials: true
+  environment:
+    DB_HOST: ${env:DB_HOST, 'localhost'}
+    DB_PORT: ${env:DB_PORT, '5432'}
+    DB_NAME: ${env:DB_NAME, 'litf-db-content-service'}
+    DB_USER: ${env:DB_USER, 'root'}
+    DB_PASSWORD: ${env:DB_PASSWORD, 'root'}
+    INTERNAL_SERVICE_KEY: ${env:INTERNAL_SERVICE_KEY, 'INTERNAL_SECRET'}
+    S3_UPLOAD_BUCKET_NAME: ${env:S3_UPLOAD_BUCKET_NAME, 'litf-dev-media'}
+    CLOUDFRONT_DOMAIN: ${env:CLOUDFRONT_DOMAIN, ''}
+    CLOUDFRONT_PRIVATE_KEY: ${env:CLOUDFRONT_PRIVATE_KEY, ''}
+    CLOUDFRONT_KEY_PAIR_ID: ${env:CLOUDFRONT_KEY_PAIR_ID, ''}
+
+functions:
+  publicContent:
+    handler: app/handlers/publicContentHandler.handler
+    events:
+      - httpApi:
+          path: /public
+          method: ANY
+      - httpApi:
+          path: /public/{proxy+}
+          method: ANY
+
+  sections:
+    handler: app/handlers/sectionsHandler.handler
+    events:
+      - httpApi:
+          path: /sections
+          method: ANY
+      - httpApi:
+          path: /sections/{proxy+}
+          method: ANY
+
+  items:
+    handler: app/handlers/itemsHandler.handler
+    events:
+      - httpApi:
+          path: /items
+          method: ANY
+      - httpApi:
+          path: /items/{proxy+}
+          method: ANY
+
+  testimonials:
+    handler: app/handlers/testimonialsHandler.handler
+    events:
+      - httpApi:
+          path: /testimonials
+          method: ANY
+      - httpApi:
+          path: /testimonials/{proxy+}
+          method: ANY
+
+  faqs:
+    handler: app/handlers/faqsHandler.handler
+    events:
+      - httpApi:
+          path: /faqs
+          method: ANY
+      - httpApi:
+          path: /faqs/{proxy+}
+          method: ANY
+
+  media:
+    handler: app/handlers/mediaHandler.handler
+    events:
+      - httpApi:
+          path: /media
+          method: ANY
+      - httpApi:
+          path: /media/{proxy+}
+          method: ANY
+
+  internal:
+    handler: app/handlers/internalHandler.handler
+    events:
+      - httpApi:
+          path: /internal
+          method: ANY
+      - httpApi:
+          path: /internal/{proxy+}
+          method: ANY
+
+plugins:
+  - serverless-offline
+  - serverless-plugin-optimize
+
+custom:
+  serverless-offline:
+    httpPort: 4010
+    lambdaPort: 3010
+    noPrependStageInUrl: true
+    host: 0.0.0.0

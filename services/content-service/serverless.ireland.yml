@@ -1,0 +1,246 @@
+service: content-service
+
+frameworkVersion: "4"
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'eu-west-1'}
+  vpc:
+    subnetIds:
+      - ${ssm:/litf-${opt:stage, 'dev'}/subnet1-Id}
+      - ${ssm:/litf-${opt:stage, 'dev'}/subnet2-Id}
+    securityGroupIds:
+      - ${ssm:/litf-${opt:stage, 'dev'}/security-group-Id}
+  httpApi:
+    cors:
+      allowedOrigins:
+        - ${ssm:/litf-${opt:stage, 'dev'}/client-ui}
+        - ${ssm:/litf-${opt:stage, 'dev'}/admin-ui}
+        - ${ssm:/litf-${opt:stage, 'dev'}/base-url} 
+      allowedMethods:
+        - GET
+        - POST
+        - PUT
+        - PATCH 
+        - DELETE
+        - OPTIONS
+      allowedHeaders:
+        - Content-Type
+        - Authorization
+        - X-Amz-Date
+        - X-Api-Key
+        - X-Amz-Security-Token
+        - X-Requested-With
+      allowCredentials: true
+  environment:
+    DB_HOST: ${ssm:/litf-${opt:stage, 'dev'}/db-host}
+    DB_PORT: ${ssm:/litf-${opt:stage, 'dev'}/db-port}
+    DB_NAME: ${ssm:/litf-${opt:stage, 'dev'}/content-service/db-name}
+    DB_USER: ${ssm:/litf-${opt:stage, 'dev'}/db-user}
+    DB_PASSWORD: ${ssm:/litf-${opt:stage, 'dev'}/db-pass}
+    APP_SERVICE_SECRET: ${ssm:/litf-${opt:stage, 'dev'}/content-service/app-secret}
+    AUTH_SERVICE_URL: ${ssm:/litf-${opt:stage, 'dev'}/auth-service/base-url}
+    INTERNAL_SERVICE_KEY: ${ssm:/litf-${opt:stage, 'dev'}/internal-key}
+    NODE_ENV: ${opt:stage, 'dev'}
+    ALLOWED_ORIGINS: ${ssm:/litf-${opt:stage, 'dev'}/allowed-origins}
+    COOKIE_DOMAIN: ${ssm:/litf-${opt:stage, 'dev'}/cookie-domain}
+    S3_UPLOAD_BUCKET_NAME: litf-${opt:stage, 'dev'}-media
+    CLOUDFRONT_DOMAIN: ${ssm:/litf-${opt:stage, 'dev'}/cloudfront-uploads-domain, ''}
+    CLOUDFRONT_PRIVATE_KEY: ${ssm:/litf-${opt:stage, 'dev'}/cloudfront-private-key, ''}
+    CLOUDFRONT_KEY_PAIR_ID: ${ssm:/litf-${opt:stage, 'dev'}/cloudfront-key-pair-id, ''}
+    API_DOMAIN_NAME: ${ssm:/litf-${opt:stage, 'dev'}/base-domain} 
+    # SNS_TOPIC: ${env:SNS_TOPIC, 'arn:aws:sns:eu-central-1:123456789012:CustomerTopic'}
+    # NOTIFY_TOPIC: ${env:NOTIFY_TOPIC, 'arn:aws:sns:eu-central-1:123456789012:NotifyTopic'}
+  # Commenting out IAM roles - likely culprit
+  iamRoleStatements:
+    # - Effect: "Allow"
+    #   Action:
+    #     - "sns:Publish"
+    #   Resource: "*"
+    - Effect: "Allow"
+      Action:
+        - "s3:PutObject"
+        - "s3:PutObjectAcl"
+        - "s3:DeleteObject"
+        - "s3:GetObject"
+      Resource: 
+        - "arn:aws:s3:::litf-*-frontend/*"
+        - "arn:aws:s3:::litf-*-frontend"
+        - "arn:aws:s3:::litf-*-uploads/*"
+        - "arn:aws:s3:::litf-*-uploads"
+        - "arn:aws:s3:::litf-*-media/*"
+        - "arn:aws:s3:::litf-*-media"
+    - Effect: "Allow"
+      Action:
+        - "cloudfront:CreateInvalidation"
+        - "cloudfront:GetDistribution"
+      Resource: "*"
+
+package:
+  patterns:
+    - '!node_modules/**'
+    - '!**/*.test.ts'
+    - '!**/*.spec.ts'
+    - '!**/__tests__/**'
+    - '!**/.git/**'
+    - '!**/.vscode/**'
+    - '!**/coverage/**'
+    - '!**/.nyc_output/**'
+    - '!**/.serverless/**'
+    - '!**/undefined/**'
+    - 'app/**'
+
+build:
+  esbuild:
+    bundle: true
+    platform: node
+    target: node18
+    external:
+      - aws-sdk
+      - '@aws-sdk/*'
+
+functions:
+  publicContent:
+    handler: app/handlers/publicContentHandler.handler
+    events:
+      - httpApi:
+          path: /public
+          method: ANY
+      - httpApi:
+          path: /public/{proxy+}
+          method: ANY
+
+  sections:
+    handler: app/handlers/sectionsHandler.handler
+    events:
+      - httpApi:
+          path: /sections
+          method: ANY
+      - httpApi:
+          path: /sections/{proxy+}
+          method: ANY
+
+  items:
+    handler: app/handlers/itemsHandler.handler
+    events:
+      - httpApi:
+          path: /items
+          method: ANY
+      - httpApi:
+          path: /items/{proxy+}
+          method: ANY
+
+  testimonials:
+    handler: app/handlers/testimonialsHandler.handler
+    events:
+      - httpApi:
+          path: /testimonials
+          method: ANY
+      - httpApi:
+          path: /testimonials/{proxy+}
+          method: ANY
+
+  faqs:
+    handler: app/handlers/faqsHandler.handler
+    events:
+      - httpApi:
+          path: /faqs
+          method: ANY
+      - httpApi:
+          path: /faqs/{proxy+}
+          method: ANY
+
+  media:
+    handler: app/handlers/mediaHandler.handler
+    events:
+      - httpApi:
+          path: /media
+          method: ANY
+      - httpApi:
+          path: /media/{proxy+}
+          method: ANY
+
+  runMigration:
+    handler: app/config/runMigration.handler
+
+  runSeeder:
+    handler: app/config/runSeeder.handler
+
+  runQuery:
+    handler: app/config/runQuery.handler
+
+  internal:
+    handler: app/handlers/internalHandler.handler
+    events:
+      - httpApi:
+          path: /internal
+          method: ANY
+      - httpApi:
+          path: /internal/{proxy+}
+          method: ANY
+
+  pageContentsHandler:
+    handler: app/handlers/pageContentsHandler.handler
+    events:
+      - httpApi:
+          path: /page-contents/{proxy+}
+          method: ANY
+      - httpApi:
+          path: /page-contents
+          method: ANY
+
+resources: 
+  Resources:
+    PublicContentAPIMapping:
+      Type: AWS::ApiGatewayV2::ApiMapping
+      Properties:
+        ApiId: ${cf:${self:service}-${sls:stage}.HttpApiId}
+        DomainName: ${self:provider.environment.API_DOMAIN_NAME}
+        Stage: '$default'
+<<<<<<< HEAD
+        ApiMappingKey: content
+=======
+        ApiMappingKey: public
+
+    SectionsAPIMapping:
+      Type: AWS::ApiGatewayV2::ApiMapping
+      Properties:
+        ApiId: ${cf:${self:service}-${sls:stage}.HttpApiId}
+        DomainName: ${self:provider.environment.API_DOMAIN_NAME}
+        Stage: '$default'
+        ApiMappingKey: sections
+
+    ItemsAPIMapping:
+      Type: AWS::ApiGatewayV2::ApiMapping
+      Properties:
+        ApiId: ${cf:${self:service}-${sls:stage}.HttpApiId}
+        DomainName: ${self:provider.environment.API_DOMAIN_NAME}
+        Stage: '$default'
+        ApiMappingKey: items
+
+    TestimonialsAPIMapping:
+      Type: AWS::ApiGatewayV2::ApiMapping
+      Properties:
+        ApiId: ${cf:${self:service}-${sls:stage}.HttpApiId}
+        DomainName: ${self:provider.environment.API_DOMAIN_NAME}
+        Stage: '$default'
+        ApiMappingKey: testimonials
+
+    FaqsAPIMapping:
+      Type: AWS::ApiGatewayV2::ApiMapping
+      Properties:
+        ApiId: ${cf:${self:service}-${sls:stage}.HttpApiId}
+        DomainName: ${self:provider.environment.API_DOMAIN_NAME}
+        Stage: '$default'
+        ApiMappingKey: faqs
+
+    MediaAPIMapping:
+      Type: AWS::ApiGatewayV2::ApiMapping
+      Properties:
+        ApiId: ${cf:${self:service}-${sls:stage}.HttpApiId}
+        DomainName: ${self:provider.environment.API_DOMAIN_NAME}
+        Stage: '$default'
+        ApiMappingKey: media
+>>>>>>> 35bf6e2 (fix:image_url and contact, about and Footer CMSs)

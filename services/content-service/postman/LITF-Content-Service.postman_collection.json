@@ -1,0 +1,422 @@
+{
+  "info": {
+    "name": "LITF Content Service API",
+    "description": "Complete API collection for Lagos International Trade Fair Content Service",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4008",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Public Content",
+      "item": [
+        {
+          "name": "Get All Content",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/content",
+              "host": ["{{baseUrl}}"],
+              "path": ["content"]
+            }
+          }
+        },
+        {
+          "name": "Get Hero Section",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/content/section/hero",
+              "host": ["{{baseUrl}}"],
+              "path": ["content", "section", "hero"]
+            }
+          }
+        },
+        {
+          "name": "Get About Section",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/content/section/about",
+              "host": ["{{baseUrl}}"],
+              "path": ["content", "section", "about"]
+            }
+          }
+        },
+        {
+          "name": "Get Features Section",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/content/section/features",
+              "host": ["{{baseUrl}}"],
+              "path": ["content", "section", "features"]
+            }
+          }
+        },
+        {
+          "name": "Get Events Section",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/content/section/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["content", "section", "events"]
+            }
+          }
+        },
+        {
+          "name": "Get Testimonials",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/content/section/testimonials",
+              "host": ["{{baseUrl}}"],
+              "path": ["content", "section", "testimonials"]
+            }
+          }
+        },
+        {
+          "name": "Get FAQs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/content/section/faqs",
+              "host": ["{{baseUrl}}"],
+              "path": ["content", "section", "faqs"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin Content",
+      "item": [
+        {
+          "name": "Get All Admin Content",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/content/admin",
+              "host": ["{{baseUrl}}"],
+              "path": ["content", "admin"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Content Sections",
+      "item": [
+        {
+          "name": "Create Content Section",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"section_key\": \"new-section\",\n  \"title\": \"New Section Title\",\n  \"content\": \"This is the content for the new section\",\n  \"metadata\": {\n    \"custom_field\": \"custom_value\",\n    \"button_text\": \"Learn More\"\n  },\n  \"is_active\": true,\n  \"display_order\": 10\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/content/sections",
+              "host": ["{{baseUrl}}"],
+              "path": ["content", "sections"]
+            }
+          }
+        },
+        {
+          "name": "Update Content Section",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Section Title\",\n  \"content\": \"Updated section content\",\n  \"is_active\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/content/sections/{{section_id}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["content", "sections", "{{section_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Content Section",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/content/sections/{{section_id}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["content", "sections", "{{section_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Content Items",
+      "item": [
+        {
+          "name": "Create Content Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"section_id\": \"{{section_id}}\",\n  \"title\": \"New Content Item\",\n  \"description\": \"Description of the content item\",\n  \"image_url\": \"https://images.pexels.com/photos/1181467/pexels-photo-1181467.jpeg\",\n  \"link_url\": \"https://example.com\",\n  \"metadata\": {\n    \"highlight\": \"Special Feature\",\n    \"subtitle\": \"Amazing Benefits\"\n  },\n  \"is_active\": true,\n  \"display_order\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/content/items",
+              "host": ["{{baseUrl}}"],
+              "path": ["content", "items"]
+            }
+          }
+        },
+        {
+          "name": "Update Content Item",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Content Item\",\n  \"description\": \"Updated description\",\n  \"is_active\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/content/items/{{item_id}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["content", "items", "{{item_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Content Item",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/content/items/{{item_id}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["content", "items", "{{item_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Testimonials",
+      "item": [
+        {
+          "name": "Create Testimonial",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"title\": \"CEO, Tech Company\",\n  \"content\": \"The Lagos International Trade Fair was an incredible experience. We made valuable connections and showcased our products to a diverse audience.\",\n  \"image_url\": \"https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg\",\n  \"date\": \"15/12/2024\",\n  \"is_active\": true,\n  \"display_order\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/content/testimonials",
+              "host": ["{{baseUrl}}"],
+              "path": ["content", "testimonials"]
+            }
+          }
+        },
+        {
+          "name": "Update Testimonial",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Smith\",\n  \"content\": \"Updated testimonial content with more details about the amazing experience.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/content/testimonials/{{testimonial_id}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["content", "testimonials", "{{testimonial_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Testimonial",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/content/testimonials/{{testimonial_id}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["content", "testimonials", "{{testimonial_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "FAQs",
+      "item": [
+        {
+          "name": "Create FAQ",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"general\",\n  \"question\": \"What is the dress code for the event?\",\n  \"answer\": \"Business casual attire is recommended for all attendees. Comfortable shoes are advised as there will be extensive walking throughout the venue.\",\n  \"metadata\": {\n    \"related_links\": [\"https://example.com/dress-code-guide\"],\n    \"priority\": \"medium\"\n  },\n  \"is_active\": true,\n  \"display_order\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/content/faqs",
+              "host": ["{{baseUrl}}"],
+              "path": ["content", "faqs"]
+            }
+          }
+        },
+        {
+          "name": "Update FAQ",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"What is the recommended dress code for the event?\",\n  \"answer\": \"Business casual or formal attire is recommended. Comfortable walking shoes are essential.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/content/faqs/{{faq_id}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["content", "faqs", "{{faq_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete FAQ",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/content/faqs/{{faq_id}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["content", "faqs", "{{faq_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Media Upload",
+      "item": [
+        {
+          "name": "Upload Image",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"file\": \"{{base64_image_data}}\",\n  \"filename\": \"sample-image.jpg\",\n  \"contentType\": \"image/jpeg\",\n  \"folder\": \"content-images\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/media/upload",
+              "host": ["{{baseUrl}}"],
+              "path": ["media", "upload"]
+            }
+          }
+        },
+        {
+          "name": "Delete Image",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"{{image_url}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/media/delete",
+              "host": ["{{baseUrl}}"],
+              "path": ["media", "delete"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Internal Service",
+      "item": [
+        {
+          "name": "Get Internal Content",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/internal",
+              "host": ["{{baseUrl}}"],
+              "path": ["internal"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
