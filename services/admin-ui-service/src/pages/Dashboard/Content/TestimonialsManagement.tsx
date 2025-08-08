@@ -13,6 +13,7 @@ import LoadingOverlay from "../../../components/common/LoadingOverlay";
 import ConfirmDialog from "../../../components/common/ConfirmDialog";
 import SuccessDialog from "../../../components/common/SuccessDialog";
 import ErrorDialog from "../../../components/common/ErrorDialog";
+import { S3UploadService } from "../../../services/S3UploadService";
 
 const TestimonialsManagement: React.FC = () => {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
@@ -40,7 +41,7 @@ const TestimonialsManagement: React.FC = () => {
     is_active: boolean;
     display_order: number;
     image_file?: File;
-    image_preview?: string;
+    image_url?: string; // URL from S3
     image_removed?: boolean;
   }>({
     name: "",
@@ -50,7 +51,7 @@ const TestimonialsManagement: React.FC = () => {
     is_active: true,
     display_order: 0,
     image_file: undefined,
-    image_preview: "",
+    image_url: "",
     image_removed: false,
   });
 
@@ -101,10 +102,11 @@ const TestimonialsManagement: React.FC = () => {
       title: "",
       content: "",
       image_file: undefined,
-      image_preview: "",
+      image_url: "",
       date: "",
       is_active: true,
       display_order: testimonials.length,
+      image_removed: false,
     });
     setIsModalOpen(true);
   };
@@ -113,7 +115,7 @@ const TestimonialsManagement: React.FC = () => {
     setFormData((prev) => ({
       ...prev,
       image_file: undefined,
-      image_preview: "",
+      image_url: "",
       image_removed: true,
     }));
   };
@@ -125,7 +127,7 @@ const TestimonialsManagement: React.FC = () => {
       title: testimonial.title,
       content: testimonial.content,
       image_file: undefined,
-      image_preview: testimonial.image_url || "",
+      image_url: testimonial.image_url || "",
       date: testimonial.date || "",
       is_active: testimonial.is_active,
       display_order: testimonial.display_order,
@@ -156,7 +158,23 @@ const TestimonialsManagement: React.FC = () => {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      // If no file is selected, clear the preview and mark for removal if an image exists
+      if (editingTestimonial?.image_url) {
+        setFormData((prev) => ({
+          ...prev,
+          image_file: undefined,
+          image_removed: true,
+        }));
+      } else {
+        setFormData((prev) => ({
+          ...prev,
+          image_file: undefined,
+          image_url: "",
+        }));
+      }
+      return;
+    }
 
     const error = validateImageFile(file);
     if (error) {
@@ -165,22 +183,45 @@ const TestimonialsManagement: React.FC = () => {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
-      setFormData((prev) => ({
-        ...prev,
-        image_file: file,
-        image_preview: base64String,
-      }));
-    };
-    reader.readAsDataURL(file);
+    // Set the file and update preview
+    setFormData((prev) => ({
+      ...prev,
+      image_file: file,
+      image_url: URL.createObjectURL(file), // Create a temporary URL for preview
+      image_removed: false, // Ensure image_removed is false if a new file is selected
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       setLoading(true);
+
+      let imageUrl = formData.image_url;
+
+      // Upload new image if a file is selected
+      if (formData.image_file) {
+        try {
+          const uploadResult = await S3UploadService.getInstance().uploadImage(
+            formData.image_file,
+            "testimonials"
+          );
+          imageUrl = uploadResult.url;
+        } catch (error) {
+          console.error("Failed to upload image:", error);
+          setErrorMessage(
+            `Failed to upload image: ${
+              error instanceof Error ? error.message : "Unknown error"
+            }. Please try again.`
+          );
+          setShowErrorDialog(true);
+          setLoading(false);
+          return;
+        }
+      } else if (formData.image_removed) {
+        // If image is marked for removal and no new image is uploaded
+        imageUrl = ""; // Remove the image URL
+      }
 
       const payload: any = {
         name: formData.name,
@@ -189,15 +230,8 @@ const TestimonialsManagement: React.FC = () => {
         date: formData.date || "",
         is_active: formData.is_active,
         display_order: formData.display_order,
+        image_url: imageUrl, // Use the potentially updated imageUrl
       };
-
-      if (formData.image_preview?.startsWith("data:image")) {
-        payload.image_url = formData.image_preview;
-      }
-
-      if (formData.image_removed) {
-        payload.image_removed = true;
-      }
 
       if (editingTestimonial) {
         await ContentRepository.updateTestimonial(
@@ -430,7 +464,8 @@ const TestimonialsManagement: React.FC = () => {
                           className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
-                            target.style.display = "none";
+                            target.onerror = null; // Prevent infinite loop if image fails again
+                            target.style.display = "none"; // Hide broken image icon
                           }}
                         />
                       )}
@@ -576,14 +611,18 @@ const TestimonialsManagement: React.FC = () => {
                     className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   />
 
-                  {formData.image_preview && (
+                  {formData.image_url && (
                     <div className="mt-4 relative">
                       <p className="text-sm text-gray-600 mb-1">Preview:</p>
                       <img
-                        key={formData.image_preview}
-                        src={formData.image_preview}
+                        src={formData.image_url}
                         alt="Preview"
                         className="h-48 w-auto rounded-lg border"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.onerror = null; // Prevent infinite loop
+                          target.style.display = "none"; // Hide broken image
+                        }}
                       />
                       <button
                         type="button"

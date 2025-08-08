@@ -288,15 +288,17 @@ const WebsiteContent: React.FC = () => {
       const uploadResult = await s3Service.uploadImage(file, "content-images");
 
       if (uploadResult.success && uploadResult.url) {
-        setSectionFormData((prev) => ({
+        // console.log("S3 upload successful for item:", uploadResult.url);
+
+        // Update ITEM form data, not section form data
+        setItemFormData((prev) => ({
           ...prev,
           image_url: uploadResult.url as string,
-          metadata: {
-            ...prev.metadata,
-            image_url: uploadResult.url as string,
-          },
+          image_file: file,
+          image_preview: uploadResult.url as string,
         }));
 
+        // console.log("Updated image URL for item:", uploadResult.url);
         setSuccessMessage("Image uploaded successfully!");
         setShowSuccessDialog(true);
       } else {
@@ -304,6 +306,7 @@ const WebsiteContent: React.FC = () => {
         setShowErrorDialog(true);
       }
     } catch (error) {
+      console.error("Failed to upload image:", error);
       setErrorMessage("Failed to upload image. Please try again.");
       setShowErrorDialog(true);
     } finally {

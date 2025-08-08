@@ -26,7 +26,6 @@ export interface ContentSection {
 }
 
 export interface ContentItem {
-  content: string | number | readonly string[] | undefined;
   id: string;
   section_id: string;
   title: string;

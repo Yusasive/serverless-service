@@ -25,6 +25,10 @@ const AboutPageManagement: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const [, setEditingItem] = useState<ContentItem | null>(null);
+  const [aboutSection, setAboutSection] = useState<ContentSection | null>(null);
+  const [aboutItems, setAboutItems] = useState<ContentItem[]>([]);
+  const [, setIsLoading] = useState(false); // Renamed from loading to avoid conflict
 
   useEffect(() => {
     loadAboutPageContent();
@@ -35,6 +39,8 @@ const AboutPageManagement: React.FC = () => {
       setLoading(true);
       const data = await ContentRepository.getAboutPageContent();
       setAboutPageData(data);
+      setAboutSection(data.section);
+      setAboutItems(data.items);
     } catch (error) {
       console.error("Failed to load about page content:", error);
       setErrorMessage("Failed to load about page content");
@@ -65,7 +71,7 @@ const AboutPageManagement: React.FC = () => {
     }
   };
 
-  const handleImageUpload = async (file: File): Promise<string | null> => {
+  const handleImageUpload = async (file: File, itemIndex: number) => {
     const s3Service = S3UploadService.getInstance();
     const validation = s3Service.validateImageFile(file);
 
@@ -77,22 +83,61 @@ const AboutPageManagement: React.FC = () => {
 
     try {
       setIsUploading(true);
+      console.log(`Starting upload for feature ${itemIndex + 1}:`, file.name);
+
       const uploadResult = await s3Service.uploadImage(
         file,
         "about-page-images"
       );
+      console.log(
+        `S3 upload successful for feature ${itemIndex + 1}:`,
+        uploadResult.url
+      );
 
-      if (uploadResult.success && uploadResult.url) {
-        setSuccessMessage("Image uploaded successfully!");
-        setShowSuccessDialog(true);
-        return uploadResult.url;
-      } else {
-        setErrorMessage(uploadResult.error || "Failed to upload image");
-        setShowErrorDialog(true);
-        return null;
-      }
+      // Update the specific item's image_url in the state
+      setAboutItems((prevItems) => {
+        const updatedItems = prevItems.map((item, index) => {
+          if (index === itemIndex) {
+            const updatedItem = { ...item, image_url: uploadResult.url };
+            console.log(
+              `Updated imageUrl for feature ${itemIndex + 1}:`,
+              updatedItem.image_url
+            );
+            return updatedItem;
+          }
+          return item;
+        });
+        console.log(`All items after update:`, updatedItems);
+        return updatedItems;
+      });
+
+      // Also update editingItem if it's the same item being edited
+      setEditingItem((prev) => {
+        if (
+          prev &&
+          aboutItems[itemIndex] &&
+          prev.id === aboutItems[itemIndex].id
+        ) {
+          const updatedEditingItem = { ...prev, image_url: uploadResult.url };
+          console.log(
+            `Updated editingItem imageUrl:`,
+            updatedEditingItem.image_url
+          );
+          return updatedEditingItem;
+        }
+        return prev;
+      });
+
+      setShowSuccessDialog(true);
+      setSuccessMessage("Image uploaded successfully");
+      return uploadResult.url;
     } catch (error) {
-      setErrorMessage("Failed to upload image. Please try again.");
+      console.error("Image upload failed:", error);
+      setErrorMessage(
+        `Failed to upload image: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
       setShowErrorDialog(true);
       return null;
     } finally {
@@ -108,9 +153,68 @@ const AboutPageManagement: React.FC = () => {
       setShowSuccessDialog(true);
       return true;
     } catch (error) {
+      console.error("Failed to delete image:", error);
       setErrorMessage("Failed to delete image. Please try again.");
       setShowErrorDialog(true);
       return false;
+    }
+  };
+
+  // Placeholder for handleSaveContentItem, will be replaced by the change
+  const handleSaveContentItem = async (item: ContentItem) => {
+    try {
+      setIsLoading(true);
+
+      // Create the data object with proper field mapping
+      const itemData = {
+        title: item.title,
+        description: item.description,
+        image_url: item.image_url, // Use the updated image_url from state
+        link_url: item.link_url || "",
+        metadata: item.metadata || {},
+        is_active: item.is_active,
+        display_order: item.display_order,
+        section_id: aboutSection?.id || "",
+      };
+
+      console.log(
+        `Feature ${item.display_order} - Final itemData being sent:`,
+        itemData
+      );
+
+      await ContentRepository.updateContentItem(item.id, itemData);
+
+      // Refresh the data
+      await loadAboutData();
+
+      setShowSuccessDialog(true);
+      setSuccessMessage("Content updated successfully");
+    } catch (error) {
+      console.error("Error updating content:", error);
+      setShowErrorDialog(true);
+      setErrorMessage(
+        `Failed to update content: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Placeholder for loadAboutData, will be replaced by the change
+  const loadAboutData = async () => {
+    try {
+      setIsLoading(true);
+      const data = await ContentRepository.getAboutPageContent();
+      setAboutSection(data.section);
+      setAboutItems(data.items);
+    } catch (error) {
+      console.error("Failed to load about data:", error);
+      setErrorMessage("Failed to load about data");
+      setShowErrorDialog(true);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -173,8 +277,10 @@ const AboutPageManagement: React.FC = () => {
 
                     const heroImageFile = formData.get("hero_image") as File;
                     if (heroImageFile && heroImageFile.size > 0) {
-                      const uploadedUrl =
-                        await handleImageUpload(heroImageFile);
+                      const uploadedUrl = await handleImageUpload(
+                        heroImageFile,
+                        -1
+                      ); // -1 indicates not a feature item
                       if (uploadedUrl) {
                         if (heroImageUrl) {
                           await handleImageDelete(heroImageUrl);
@@ -490,38 +596,55 @@ const AboutPageManagement: React.FC = () => {
                       const formData = new FormData(e.currentTarget);
 
                       let imageUrl =
-                        aboutPageData.items.find(
-                          (item) => item.display_order === 1
-                        )?.image_url || "";
+                        aboutItems.find((item) => item.display_order === 1)
+                          ?.image_url || "";
 
                       const imageFile = formData.get("feature1_image") as File;
                       if (imageFile && imageFile.size > 0) {
-                        const uploadedUrl = await handleImageUpload(imageFile);
+                        const uploadedUrl = await handleImageUpload(
+                          imageFile,
+                          0
+                        ); // Index 0 for Feature 1
                         if (uploadedUrl) {
+                          console.log(
+                            "S3 upload successful for feature 1:",
+                            uploadedUrl
+                          );
                           if (imageUrl) {
                             await handleImageDelete(imageUrl);
                           }
                           imageUrl = uploadedUrl;
+                          console.log(
+                            "Updated imageUrl for feature 1:",
+                            imageUrl
+                          );
                         } else {
                           return;
                         }
                       }
 
                       try {
-                        setLoading(true);
+                        setIsLoading(true); // Use setIsLoading here
 
-                        let existingItem = aboutPageData.items.find(
+                        let existingItem = aboutItems.find(
                           (item) => item.display_order === 1
                         );
 
                         const itemData = {
                           title: formData.get("feature1_title") as string,
-                          content: formData.get("feature1_content") as string,
+                          description: formData.get(
+                            "feature1_content"
+                          ) as string,
                           image_url: imageUrl,
                           display_order: 1,
                           is_active: true,
-                          section_id: aboutPageData.section?.id,
+                          section_id: aboutSection?.id,
                         };
+
+                        console.log(
+                          "Feature 1 - Final itemData being sent:",
+                          itemData
+                        );
 
                         if (existingItem) {
                           await ContentRepository.updateContentItem(
@@ -536,13 +659,13 @@ const AboutPageManagement: React.FC = () => {
                           "Feature box 1 updated successfully!"
                         );
                         setShowSuccessDialog(true);
-                        await loadAboutPageContent();
+                        await loadAboutPageContent(); // Reload content after update
                       } catch (error) {
                         console.error("Failed to update feature box 1:", error);
                         setErrorMessage("Failed to update feature box 1");
                         setShowErrorDialog(true);
                       } finally {
-                        setLoading(false);
+                        setIsLoading(false); // Use setIsLoading here
                       }
                     }}
                     className="space-y-4"
@@ -555,9 +678,8 @@ const AboutPageManagement: React.FC = () => {
                         type="text"
                         name="feature1_title"
                         defaultValue={
-                          aboutPageData.items.find(
-                            (item) => item.display_order === 1
-                          )?.title
+                          aboutItems.find((item) => item.display_order === 1)
+                            ?.title
                         }
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         required
@@ -570,9 +692,8 @@ const AboutPageManagement: React.FC = () => {
                       <textarea
                         name="feature1_content"
                         defaultValue={
-                          aboutPageData.items.find(
-                            (item) => item.display_order === 1
-                          )?.content ||
+                          aboutItems.find((item) => item.display_order === 1)
+                            ?.description ||
                           "Held annually since 1981, attracting exhibitors and visitors from all over the world."
                         }
                         rows={2}
@@ -597,13 +718,12 @@ const AboutPageManagement: React.FC = () => {
                           Uploading image...
                         </div>
                       )}
-                      {aboutPageData.items.find(
-                        (item) => item.display_order === 1
-                      )?.image_url && (
+                      {aboutItems.find((item) => item.display_order === 1)
+                        ?.image_url && (
                         <div className="mt-3">
                           <img
                             src={
-                              aboutPageData.items.find(
+                              aboutItems.find(
                                 (item) => item.display_order === 1
                               )?.image_url
                             }
@@ -613,7 +733,7 @@ const AboutPageManagement: React.FC = () => {
                           <button
                             type="button"
                             onClick={async () => {
-                              const imageUrl = aboutPageData.items.find(
+                              const imageUrl = aboutItems.find(
                                 (item) => item.display_order === 1
                               )?.image_url;
                               if (
@@ -621,7 +741,7 @@ const AboutPageManagement: React.FC = () => {
                                 (await handleImageDelete(imageUrl))
                               ) {
                                 // Update the item to remove image_url
-                                const existingItem = aboutPageData.items.find(
+                                const existingItem = aboutItems.find(
                                   (item) => item.display_order === 1
                                 );
                                 if (existingItem) {
@@ -671,39 +791,56 @@ const AboutPageManagement: React.FC = () => {
                       const formData = new FormData(e.currentTarget);
 
                       let imageUrl =
-                        aboutPageData.items.find(
-                          (item) => item.display_order === 2
-                        )?.image_url || "";
+                        aboutItems.find((item) => item.display_order === 2)
+                          ?.image_url || "";
 
                       // Handle image upload if a new file is selected
                       const imageFile = formData.get("feature2_image") as File;
                       if (imageFile && imageFile.size > 0) {
-                        const uploadedUrl = await handleImageUpload(imageFile);
+                        const uploadedUrl = await handleImageUpload(
+                          imageFile,
+                          1
+                        ); // Index 1 for Feature 2
                         if (uploadedUrl) {
+                          console.log(
+                            "S3 upload successful for feature 2:",
+                            uploadedUrl
+                          );
                           // Delete old image if it exists
                           if (imageUrl) {
                             await handleImageDelete(imageUrl);
                           }
                           imageUrl = uploadedUrl;
+                          console.log(
+                            "Updated imageUrl for feature 2:",
+                            imageUrl
+                          );
                         } else {
                           return; // Stop if upload failed
                         }
                       }
 
                       try {
-                        setLoading(true);
-                        let existingItem = aboutPageData.items.find(
+                        setIsLoading(true); // Use setIsLoading here
+                        let existingItem = aboutItems.find(
                           (item) => item.display_order === 2
                         );
 
                         const itemData = {
                           title: formData.get("feature2_title") as string,
-                          content: formData.get("feature2_content") as string,
+                          description: formData.get(
+                            "feature2_content"
+                          ) as string,
                           image_url: imageUrl,
                           display_order: 2,
                           is_active: true,
-                          section_id: aboutPageData.section?.id,
+                          section_id: aboutSection?.id,
                         };
+
+                        console.log(
+                          "Feature 2 - Final itemData being sent:",
+                          itemData
+                        );
 
                         if (existingItem) {
                           await ContentRepository.updateContentItem(
@@ -718,13 +855,13 @@ const AboutPageManagement: React.FC = () => {
                           "Feature box 2 updated successfully!"
                         );
                         setShowSuccessDialog(true);
-                        await loadAboutPageContent();
+                        await loadAboutPageContent(); // Reload content after update
                       } catch (error) {
                         console.error("Failed to update feature box 2:", error);
                         setErrorMessage("Failed to update feature box 2");
                         setShowErrorDialog(true);
                       } finally {
-                        setLoading(false);
+                        setIsLoading(false); // Use setIsLoading here
                       }
                     }}
                     className="space-y-4"
@@ -737,9 +874,8 @@ const AboutPageManagement: React.FC = () => {
                         type="text"
                         name="feature2_title"
                         defaultValue={
-                          aboutPageData.items.find(
-                            (item) => item.display_order === 2
-                          )?.title || "Business & Networking"
+                          aboutItems.find((item) => item.display_order === 2)
+                            ?.title || "Business & Networking"
                         }
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent"
                         required
@@ -752,9 +888,8 @@ const AboutPageManagement: React.FC = () => {
                       <textarea
                         name="feature2_content"
                         defaultValue={
-                          aboutPageData.items.find(
-                            (item) => item.display_order === 2
-                          )?.content ||
+                          aboutItems.find((item) => item.display_order === 2)
+                            ?.description ||
                           "A hub for top organizations, policy makers, and professionals to connect and collaborate."
                         }
                         rows={2}
@@ -779,13 +914,12 @@ const AboutPageManagement: React.FC = () => {
                           Uploading image...
                         </div>
                       )}
-                      {aboutPageData.items.find(
-                        (item) => item.display_order === 2
-                      )?.image_url && (
+                      {aboutItems.find((item) => item.display_order === 2)
+                        ?.image_url && (
                         <div className="mt-3">
                           <img
                             src={
-                              aboutPageData.items.find(
+                              aboutItems.find(
                                 (item) => item.display_order === 2
                               )?.image_url
                             }
@@ -795,7 +929,7 @@ const AboutPageManagement: React.FC = () => {
                           <button
                             type="button"
                             onClick={async () => {
-                              const imageUrl = aboutPageData.items.find(
+                              const imageUrl = aboutItems.find(
                                 (item) => item.display_order === 2
                               )?.image_url;
                               if (
@@ -803,7 +937,7 @@ const AboutPageManagement: React.FC = () => {
                                 (await handleImageDelete(imageUrl))
                               ) {
                                 // Update the item to remove image_url
-                                const existingItem = aboutPageData.items.find(
+                                const existingItem = aboutItems.find(
                                   (item) => item.display_order === 2
                                 );
                                 if (existingItem) {
@@ -855,39 +989,56 @@ const AboutPageManagement: React.FC = () => {
                       const formData = new FormData(e.currentTarget);
 
                       let imageUrl =
-                        aboutPageData.items.find(
-                          (item) => item.display_order === 3
-                        )?.image_url || "";
+                        aboutItems.find((item) => item.display_order === 3)
+                          ?.image_url || "";
 
                       // Handle image upload if a new file is selected
                       const imageFile = formData.get("feature3_image") as File;
                       if (imageFile && imageFile.size > 0) {
-                        const uploadedUrl = await handleImageUpload(imageFile);
+                        const uploadedUrl = await handleImageUpload(
+                          imageFile,
+                          2
+                        ); // Index 2 for Feature 3
                         if (uploadedUrl) {
+                          console.log(
+                            "S3 upload successful for feature 3:",
+                            uploadedUrl
+                          );
                           // Delete old image if it exists
                           if (imageUrl) {
                             await handleImageDelete(imageUrl);
                           }
                           imageUrl = uploadedUrl;
+                          console.log(
+                            "Updated imageUrl for feature 3:",
+                            imageUrl
+                          );
                         } else {
                           return; // Stop if upload failed
                         }
                       }
 
                       try {
-                        setLoading(true);
-                        let existingItem = aboutPageData.items.find(
+                        setIsLoading(true); // Use setIsLoading here
+                        let existingItem = aboutItems.find(
                           (item) => item.display_order === 3
                         );
 
                         const itemData = {
                           title: formData.get("feature3_title") as string,
-                          content: formData.get("feature3_content") as string,
+                          description: formData.get(
+                            "feature3_content"
+                          ) as string,
                           image_url: imageUrl,
                           display_order: 3,
                           is_active: true,
-                          section_id: aboutPageData.section?.id,
+                          section_id: aboutSection?.id,
                         };
+
+                        console.log(
+                          "Feature 3 - Final itemData being sent:",
+                          itemData
+                        );
 
                         if (existingItem) {
                           await ContentRepository.updateContentItem(
@@ -902,13 +1053,13 @@ const AboutPageManagement: React.FC = () => {
                           "Feature box 3 updated successfully!"
                         );
                         setShowSuccessDialog(true);
-                        await loadAboutPageContent();
+                        await loadAboutPageContent(); // Reload content after update
                       } catch (error) {
                         console.error("Failed to update feature box 3:", error);
                         setErrorMessage("Failed to update feature box 3");
                         setShowErrorDialog(true);
                       } finally {
-                        setLoading(false);
+                        setIsLoading(false); // Use setIsLoading here
                       }
                     }}
                     className="space-y-4"
@@ -921,9 +1072,8 @@ const AboutPageManagement: React.FC = () => {
                         type="text"
                         name="feature3_title"
                         defaultValue={
-                          aboutPageData.items.find(
-                            (item) => item.display_order === 3
-                          )?.title || "Diverse Participation"
+                          aboutItems.find((item) => item.display_order === 3)
+                            ?.title || "Diverse Participation"
                         }
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         required
@@ -936,9 +1086,8 @@ const AboutPageManagement: React.FC = () => {
                       <textarea
                         name="feature3_content"
                         defaultValue={
-                          aboutPageData.items.find(
-                            (item) => item.display_order === 3
-                          )?.content ||
+                          aboutItems.find((item) => item.display_order === 3)
+                            ?.description ||
                           "Open to local and foreign exhibitors, with growing interest and attendance every year."
                         }
                         rows={2}
@@ -963,13 +1112,12 @@ const AboutPageManagement: React.FC = () => {
                           Uploading image...
                         </div>
                       )}
-                      {aboutPageData.items.find(
-                        (item) => item.display_order === 3
-                      )?.image_url && (
+                      {aboutItems.find((item) => item.display_order === 3)
+                        ?.image_url && (
                         <div className="mt-3">
                           <img
                             src={
-                              aboutPageData.items.find(
+                              aboutItems.find(
                                 (item) => item.display_order === 3
                               )?.image_url
                             }
@@ -979,14 +1127,14 @@ const AboutPageManagement: React.FC = () => {
                           <button
                             type="button"
                             onClick={async () => {
-                              const imageUrl = aboutPageData.items.find(
+                              const imageUrl = aboutItems.find(
                                 (item) => item.display_order === 3
                               )?.image_url;
                               if (
                                 imageUrl &&
                                 (await handleImageDelete(imageUrl))
                               ) {
-                                const existingItem = aboutPageData.items.find(
+                                const existingItem = aboutItems.find(
                                   (item) => item.display_order === 3
                                 );
                                 if (existingItem) {
@@ -1036,37 +1184,54 @@ const AboutPageManagement: React.FC = () => {
                       const formData = new FormData(e.currentTarget);
 
                       let imageUrl =
-                        aboutPageData.items.find(
-                          (item) => item.display_order === 4
-                        )?.image_url || "";
+                        aboutItems.find((item) => item.display_order === 4)
+                          ?.image_url || "";
 
                       const imageFile = formData.get("feature4_image") as File;
                       if (imageFile && imageFile.size > 0) {
-                        const uploadedUrl = await handleImageUpload(imageFile);
+                        const uploadedUrl = await handleImageUpload(
+                          imageFile,
+                          3
+                        ); // Index 3 for Feature 4
                         if (uploadedUrl) {
+                          console.log(
+                            "S3 upload successful for feature 4:",
+                            uploadedUrl
+                          );
                           if (imageUrl) {
                             await handleImageDelete(imageUrl);
                           }
                           imageUrl = uploadedUrl;
+                          console.log(
+                            "Updated imageUrl for feature 4:",
+                            imageUrl
+                          );
                         } else {
                           return;
                         }
                       }
 
                       try {
-                        setLoading(true);
-                        let existingItem = aboutPageData.items.find(
+                        setIsLoading(true); // Use setIsLoading here
+                        let existingItem = aboutItems.find(
                           (item) => item.display_order === 4
                         );
 
                         const itemData = {
                           title: formData.get("feature4_title") as string,
-                          content: formData.get("feature4_content") as string,
+                          description: formData.get(
+                            "feature4_content"
+                          ) as string,
                           image_url: imageUrl,
                           display_order: 4,
                           is_active: true,
-                          section_id: aboutPageData.section?.id,
+                          section_id: aboutSection?.id,
                         };
+
+                        console.log(
+                          "Feature 4 - Final itemData being sent:",
+                          itemData
+                        );
 
                         if (existingItem) {
                           await ContentRepository.updateContentItem(
@@ -1081,13 +1246,13 @@ const AboutPageManagement: React.FC = () => {
                           "Feature box 4 updated successfully!"
                         );
                         setShowSuccessDialog(true);
-                        await loadAboutPageContent();
+                        await loadAboutPageContent(); // Reload content after update
                       } catch (error) {
                         console.error("Failed to update feature box 4:", error);
                         setErrorMessage("Failed to update feature box 4");
                         setShowErrorDialog(true);
                       } finally {
-                        setLoading(false);
+                        setIsLoading(false); // Use setIsLoading here
                       }
                     }}
                     className="space-y-4"
@@ -1100,9 +1265,8 @@ const AboutPageManagement: React.FC = () => {
                         type="text"
                         name="feature4_title"
                         defaultValue={
-                          aboutPageData.items.find(
-                            (item) => item.display_order === 4
-                          )?.title || "Wide Publicity"
+                          aboutItems.find((item) => item.display_order === 4)
+                            ?.title || "Wide Publicity"
                         }
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent"
                         required
@@ -1115,9 +1279,8 @@ const AboutPageManagement: React.FC = () => {
                       <textarea
                         name="feature4_content"
                         defaultValue={
-                          aboutPageData.items.find(
-                            (item) => item.display_order === 4
-                          )?.content
+                          aboutItems.find((item) => item.display_order === 4)
+                            ?.description
                         }
                         rows={2}
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent"
@@ -1141,13 +1304,12 @@ const AboutPageManagement: React.FC = () => {
                           Uploading image...
                         </div>
                       )}
-                      {aboutPageData.items.find(
-                        (item) => item.display_order === 4
-                      )?.image_url && (
+                      {aboutItems.find((item) => item.display_order === 4)
+                        ?.image_url && (
                         <div className="mt-3">
                           <img
                             src={
-                              aboutPageData.items.find(
+                              aboutItems.find(
                                 (item) => item.display_order === 4
                               )?.image_url
                             }
@@ -1157,14 +1319,14 @@ const AboutPageManagement: React.FC = () => {
                           <button
                             type="button"
                             onClick={async () => {
-                              const imageUrl = aboutPageData.items.find(
+                              const imageUrl = aboutItems.find(
                                 (item) => item.display_order === 4
                               )?.image_url;
                               if (
                                 imageUrl &&
                                 (await handleImageDelete(imageUrl))
                               ) {
-                                const existingItem = aboutPageData.items.find(
+                                const existingItem = aboutItems.find(
                                   (item) => item.display_order === 4
                                 );
                                 if (existingItem) {
