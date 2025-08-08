@@ -19,7 +19,6 @@ export interface ContentItem {
   title: string;
   description?: string;
   image_url?: string;
-  image_base64?: string;
   link_url?: string;
   metadata?: any;
   is_active: boolean;
@@ -34,7 +33,6 @@ export interface Testimonial {
   title: string;
   content: string;
   image_url?: string;
-  image_base64?: string;
   date?: string;
   is_active: boolean;
   display_order: number;
@@ -63,7 +61,7 @@ export class ContentRepository {
       import.meta.env.VITE_ENVIRONMENT === "dev" ||
       import.meta.env.VITE_ENVIRONMENT === "prod"
     ) {
-      this.baseUrl = import.meta.env.VITE_SERVICE_BASE_URL;
+      this.baseUrl = import.meta.env.VITE_SERVICE_BASE_URL + "/content";
     } else {
       this.baseUrl = CONTENT_BASE_URL;
     }
@@ -93,14 +91,13 @@ export class ContentRepository {
     testimonials: Testimonial[];
     faqs: FAQ[];
   } | null> {
-    const response =
-      await ContentRepository.getInstance().request("/public/public");
+    const response = await ContentRepository.getInstance().request("/public");
     return response.success ? response.data : null;
   }
 
   static async getContentBySection(section_key: string): Promise<any> {
     const response = await ContentRepository.getInstance().request(
-      `/public/section/${section_key}`
+      `/section/${section_key}`
     );
     return response.success ? response.data : null;
   }
@@ -109,9 +106,8 @@ export class ContentRepository {
     section: ContentSection | null;
     items: ContentItem[];
   }> {
-    const response = await ContentRepository.getInstance().request(
-      "/public/section/hero"
-    );
+    const response =
+      await ContentRepository.getInstance().request("/section/hero");
     return response.success ? response.data : { section: null, items: [] };
   }
 
@@ -119,9 +115,8 @@ export class ContentRepository {
     section: ContentSection | null;
     items: ContentItem[];
   }> {
-    const response = await ContentRepository.getInstance().request(
-      "/public/section/about"
-    );
+    const response =
+      await ContentRepository.getInstance().request("/section/about");
     return response.success ? response.data : { section: null, items: [] };
   }
 
@@ -129,9 +124,8 @@ export class ContentRepository {
     section: ContentSection | null;
     items: ContentItem[];
   }> {
-    const response = await ContentRepository.getInstance().request(
-      "/public/section/features"
-    );
+    const response =
+      await ContentRepository.getInstance().request("/section/features");
     return response.success ? response.data : { section: null, items: [] };
   }
 
@@ -139,23 +133,21 @@ export class ContentRepository {
     section: ContentSection | null;
     items: ContentItem[];
   }> {
-    const response = await ContentRepository.getInstance().request(
-      "/public/section/events"
-    );
+    const response =
+      await ContentRepository.getInstance().request("/section/events");
     return response.success ? response.data : { section: null, items: [] };
   }
 
   static async getTestimonials(): Promise<{ testimonials: Testimonial[] }> {
     const response = await ContentRepository.getInstance().request(
-      "/public/section/testimonials"
+      "/section/testimonials"
     );
     return response.success ? response.data : { testimonials: [] };
   }
 
   static async getFAQs(): Promise<{ faqs: FAQ[] }> {
-    const response = await ContentRepository.getInstance().request(
-      "/public/section/faqs"
-    );
+    const response =
+      await ContentRepository.getInstance().request("/section/faqs");
     return response.success ? response.data : { faqs: [] };
   }
 
@@ -163,9 +155,8 @@ export class ContentRepository {
     section: ContentSection | null;
     items: ContentItem[];
   }> {
-    const response = await ContentRepository.getInstance().request(
-      "/public/section/footer"
-    );
+    const response =
+      await ContentRepository.getInstance().request("/section/footer");
     return response.success ? response.data : { section: null, items: [] };
   }
 
@@ -174,7 +165,7 @@ export class ContentRepository {
     items: ContentItem[];
   }> {
     const response = await ContentRepository.getInstance().request(
-      "/public/section/about-page"
+      "/section/about-page"
     );
     return response.success ? response.data : { section: null, items: [] };
   }
@@ -184,14 +175,14 @@ export class ContentRepository {
     items: ContentItem[];
   }> {
     const response = await ContentRepository.getInstance().request(
-      "/public/section/contact-page"
+      "/section/contact-page"
     );
     return response.success ? response.data : { section: null, items: [] };
   }
 
   static async getFAQsByCategory(category: string): Promise<{ faqs: FAQ[] }> {
     const response = await ContentRepository.getInstance().request(
-      `/public/section/faqs?category=${category}`
+      `/section/faqs?category=${category}`
     );
     return response.success ? response.data : { faqs: [] };
   }

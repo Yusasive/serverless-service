@@ -22,6 +22,7 @@ interface AboutContent {
       established?: string;
       incorporated?: string;
       about_fair_content?: string;
+      hero_image_url: string;
     };
   } | null;
   items: any[];
@@ -82,7 +83,7 @@ const About: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
             <div className="order-2 lg:order-1">
               <img
-                src="/images/about.jpg"
+                src={aboutContent.section.metadata?.hero_image_url}
                 alt="Lagos Chamber of Commerce and Industry"
                 className="w-full h-80 object-cover rounded-2xl shadow-lg transform hover:scale-105 transition-transform duration-500 border-4 border-primary-100"
               />

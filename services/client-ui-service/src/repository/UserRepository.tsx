@@ -283,9 +283,9 @@ export class UserRepository {
     }
   }
 
-  async getCompanyReps(): Promise<ApiResponse<CompanyRep[]>> {
+  async getCompanyReps(user_id: number): Promise<ApiResponse<CompanyRep[]>> {
     try {
-      const response = await this.axiosInstance.get('/company-reps', {
+      const response = await this.axiosInstance.get('/company-reps?user_id=' + user_id, {
         withCredentials: true
       });
       return response.data;

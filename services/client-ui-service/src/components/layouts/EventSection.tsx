@@ -60,6 +60,13 @@ const EventSection: React.FC = () => {
               {section.title || "Upcoming Events"}
             </h2>
           </div>
+          <button
+            onClick={() => navigate("/events")}
+            className="inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 font-semibold transition-colors duration-200 group"
+          >
+            View All Events
+            <span className="group-hover:translate-x-1 transition-transform duration-200">→</span>
+          </button>
         </div>
 
         <div className="space-y-6">
@@ -90,14 +97,6 @@ const EventSection: React.FC = () => {
               </div>
             </div>
           ))}
-        </div>
-        <div className="mt-10 flex justify-center">
-          <button
-            onClick={() => navigate("/events")}
-            className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200"
-          >
-            View All Events →
-          </button>
         </div>
       </div>
     </section>

@@ -98,7 +98,7 @@ const TestimonialSection: React.FC = () => {
 
                 {testimonial.image_url && (
                   <img
-                    src={testimonial.image_base64}
+                    src={testimonial.image_url}
                     alt={testimonial.name}
                     className="w-16 h-16 rounded-full mx-auto mb-4 object-cover border border-gray-300"
                   />

@@ -233,9 +233,9 @@ export class UserController {
     }
   }
 
-  async getCompanyReps(): Promise<{ success: boolean; error?: string; data?: CompanyRep[] }> {
+  async getCompanyReps(user_id: number): Promise<{ success: boolean; error?: string; data?: CompanyRep[] }> {
     try {
-      const response = await this.repository.getCompanyReps();
+      const response = await this.repository.getCompanyReps(user_id);
       return {
         success: true,
         data: response.data

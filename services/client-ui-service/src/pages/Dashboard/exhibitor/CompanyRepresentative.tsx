@@ -53,7 +53,12 @@ export default function CompanyRepresentative() {
         setLoading(true);
         setError(null);
         try {
-            const response = await UserController.getInstance().getCompanyReps();
+            if (!user) {
+                navigate('/login');
+                return;
+            }
+            
+            const response = await UserController.getInstance().getCompanyReps(user._id as number);
             if (response.success && response.data) {
                 setCompanyRepresentatives(response.data);
             } else {
