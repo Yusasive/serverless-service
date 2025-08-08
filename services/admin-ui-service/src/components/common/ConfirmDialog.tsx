@@ -7,6 +7,7 @@ interface ConfirmDialogProps {
   onCancel: () => void;
   confirmText?: string;
   cancelText?: string;
+  disabled?: boolean;
 }
 
 const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
@@ -15,7 +16,8 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   onConfirm,
   onCancel,
   confirmText = 'Confirm',
-  cancelText = 'Cancel'
+  cancelText = 'Cancel',
+  disabled = false
 }) => {
   if (!isOpen) return null;
 
@@ -43,13 +45,15 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           <div className="flex justify-center gap-4">
             <button
               onClick={onCancel}
-              className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
+              disabled={disabled}
+              className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {cancelText}
             </button>
             <button
               onClick={onConfirm}
-              className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition"
+              disabled={disabled}
+              className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {confirmText}
             </button>

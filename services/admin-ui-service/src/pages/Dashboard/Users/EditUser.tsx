@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import LoadingOverlay from '@/components/common/LoadingOverlay';
 import { User } from '@/types/user.type';
+import { Role } from '@/types/role.type';
 import { UserController } from '@/controllers/UserController';
+import { RoleController } from '@/controllers/RoleController';
 
 interface EditUserProps {
     isOpen: boolean;
@@ -12,26 +14,63 @@ interface EditUserProps {
 
 const EditUser: React.FC<EditUserProps> = ({ isOpen, onClose, onSuccess, user }) => {
     const [isLoading, setIsLoading] = useState(false);
+    const [roles, setRoles] = useState<Role[]>([]);
+    const [loadingRoles, setLoadingRoles] = useState(false);
     const [formData, setFormData] = useState({
         first_name: '',
         last_name: '',
+        role_id: 0,
     });
 
+    // Fetch roles when component mounts
     useEffect(() => {
+        const fetchRoles = async () => {
+            setLoadingRoles(true);
+            try {
+                const fetchedRoles = await RoleController.getInstance().getRoles();
+                // Filter out Attendee and Exhibitor roles
+                const filteredRoles = fetchedRoles.filter(role => 
+                    !role.name.toLowerCase().includes('attendee') && 
+                    !role.name.toLowerCase().includes('exhibitor')
+                );
+                setRoles(filteredRoles);
+            } catch (error) {
+                console.error('Error fetching roles:', error);
+            } finally {
+                setLoadingRoles(false);
+            }
+        };
+
+        if (isOpen) {
+            fetchRoles();
+        }
+    }, [isOpen]);
+
+    useEffect(() => {
+        // Find the role that matches the user's current role
+        const currentRole = roles.find(role => 
+            role.name.toLowerCase() === user.userType?.toLowerCase() ||
+            role.name.toLowerCase() === user.role?.toLowerCase()
+        );
+
         setFormData({
             first_name: user.first_name || '',
             last_name: user.last_name || '',
+            role_id: currentRole?.id || 0,
         });
-    }, [user]);
+    }, [user, roles]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
         try {
+            const selectedRole = roles.find(role => role.id === formData.role_id);
+            
             await UserController.getInstance().updateUser({
                 ...user,
                 first_name: formData.first_name,
                 last_name: formData.last_name,
+                role: selectedRole?.name || user.role,
             });
             onSuccess();
             onClose();
@@ -83,17 +122,31 @@ const EditUser: React.FC<EditUserProps> = ({ isOpen, onClose, onSuccess, user })
                         />
                     </div>
 
+                    {/* Role Field (Editable) */}
                     <div>
-                        <label htmlFor="user_type" className="block text-sm font-medium text-gray-700">
-                            User Type
+                        <label htmlFor="role_id" className="block text-sm font-medium text-gray-700">
+                            Role
                         </label>
-                        <input
-                            type="text"
-                            id="user_type"
-                            disabled
-                            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 bg-gray-50 text-gray-500"
-                            value={user.userType || ''}
-                        />
+                        {loadingRoles ? (
+                            <div className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 bg-gray-50">
+                                Loading roles...
+                            </div>
+                        ) : (
+                            <select
+                                id="role_id"
+                                required
+                                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                value={formData.role_id}
+                                onChange={(e) => setFormData({ ...formData, role_id: parseInt(e.target.value) })}
+                            >
+                                <option value={0}>Select a role</option>
+                                {roles.map((role) => (
+                                    <option key={role.id} value={role.id}>
+                                        {role.name} - {role.description}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
                     </div>
 
                     {/* First Name Field (Editable) */}
@@ -137,7 +190,8 @@ const EditUser: React.FC<EditUserProps> = ({ isOpen, onClose, onSuccess, user })
                         </button>
                         <button
                             type="submit"
-                            className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                            disabled={loadingRoles || formData.role_id === 0}
+                            className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
                         >
                             Save Changes
                         </button>

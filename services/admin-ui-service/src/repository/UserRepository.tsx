@@ -2,12 +2,14 @@ import axios from 'axios';
 import { USER_BASE_URL } from '../common/TextStrings';
 import { User, UserType } from '@/types/user.type';
 import { Response } from '@/types/response.type';
+import { CompanyRep, CompanyRepResponse } from '@/types/companyRep.type';
 
 export interface CreateUserRequest {
   email: string;
   phone: string;
   user_type: UserType;
   password: string;
+  role?: string;
 }
 
 
@@ -134,7 +136,7 @@ export class UserRepository {
 
   async deleteteUser(id: number): Promise<void> {
     try {
-      await this.axiosInstance.delete(`/users/${id}`);
+      await this.axiosInstance.delete(`/delete?id=${id}`);
     } catch (error) {
       throw error;
     }
@@ -155,6 +157,40 @@ export class UserRepository {
           throw new Error('Export timed out. Please try again with a smaller dataset.');
         }
         throw new Error(error.response?.data?.message || 'Failed to export users');
+      }
+      throw error;
+    }
+  }
+
+  async getCompanyReps(exhibitorId: number): Promise<CompanyRepResponse> {
+    try {
+      const response = await this.axiosInstance.get<CompanyRepResponse>(`/company-reps?user_id=${exhibitorId}`);
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.message || 'Failed to fetch company representatives');
+      }
+      throw error;
+    }
+  }
+
+  async deleteCompanyRep(id: number): Promise<void> {
+    try {
+      await this.axiosInstance.delete(`/company-reps/${id}`);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updateCompanyRep(id: number, request: Partial<CompanyRep>): Promise<void> {
+    try {
+      const response = await this.axiosInstance.patch(`/company-reps/${id}`, request, {
+        withCredentials: true
+      });
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)){
+        throw new Error(error.response?.data.message || 'Server Unavailable')
       }
       throw error;
     }

@@ -4,11 +4,11 @@ import { TableColumn } from 'react-data-table-component';
 import DataTable from '../../../components/datatable/Datatable';
 import { RoleController } from '../../../controllers/RoleController';
 import LoadingPage from '../../../components/common/LoadingPage';
+import LoadingOverlay from '../../../components/common/LoadingOverlay';
 import { useNavigate } from 'react-router-dom';
 import { FaTrash, FaEdit } from 'react-icons/fa';
 import ConfirmDialog from '../../../components/common/ConfirmDialog';
-import SuccessDialog from '@/components/common/SuccessDialog';
-import ErrorDialog from '@/components/common/ErrorDialog';
+import ToastNotification from '@/components/common/ToastNotification';
 
 const Roles: React.FC = () => {
     const [roles, setRoles] = useState<Role[]>([]);
@@ -17,9 +17,17 @@ const Roles: React.FC = () => {
     const navigate = useNavigate();
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
-    const [showSuccessDialog, setShowSuccessDialog] = useState(false);
-    const [showErrorDialog, setShowErrorDialog] = useState(false);
-    const [errorMessage, setErrorMessage] = useState('Error deleting role');
+    const [deleteLoading, setDeleteLoading] = useState(false);
+
+    const [showToast, setShowToast] = useState(false);
+    const [toastType, setToastType] = useState<'success' | 'error' | 'info' | 'warning'>('success');
+    const [toastMessage, setToastMessage] = useState('');
+
+    const displayToast = (type: 'success' | 'error' | 'info' | 'warning', message: string) => {
+        setToastType(type);
+        setToastMessage(message);
+        setShowToast(true);
+    };
 
     useEffect(() => {
         const fetchRoles = async () => {
@@ -37,6 +45,17 @@ const Roles: React.FC = () => {
         fetchRoles();
     }, []);
 
+    // Auto-hide toast after 5 seconds
+    useEffect(() => {
+        if (showToast) {
+            const timer = setTimeout(() => {
+                setShowToast(false);
+            }, 5000); // 5 seconds
+
+            return () => clearTimeout(timer);
+        }
+    }, [showToast]);
+
 
     const handleDelete = async (id: number) => {
         setSelectedRoleId(id);
@@ -51,16 +70,18 @@ const Roles: React.FC = () => {
         setShowConfirmDialog(false);
         if (selectedRoleId) {
             if (roles.find(role => role.id === selectedRoleId)?.created_by?.toLowerCase() === 'system') {
-                setErrorMessage('Cannot delete system role');
-                setShowErrorDialog(true);
+                displayToast('error', 'Cannot delete system role');
                 return;
             }
             try {
+                setDeleteLoading(true);
                 await RoleController.getInstance().deleteRole(selectedRoleId);
-                setShowSuccessDialog(true);
+                displayToast('success', 'Role deleted successfully');
                 setRoles(roles.filter(role => role.id !== selectedRoleId));
             } catch (err: any) {
-                setError(err);
+                displayToast('error', err.message || 'Failed to delete role. Please try again.');
+            } finally {
+                setDeleteLoading(false);
             }
         }
         setSelectedRoleId(null);
@@ -139,26 +160,30 @@ const Roles: React.FC = () => {
             error={error}
             loadingMessage="Loading roles..."
         >
+            <LoadingOverlay 
+                isLoading={deleteLoading} 
+                message="Deleting role..."
+            />
+            
             <ConfirmDialog
                 isOpen={showConfirmDialog}
                 message="Are you sure you want to delete this role?"
                 onConfirm={confirmDelete}
                 onCancel={() => setShowConfirmDialog(false)}
+                confirmText={deleteLoading ? 'Deleting...' : 'Delete'}
+                cancelText="Cancel"
+                disabled={deleteLoading}
             />
-            <SuccessDialog
-                isOpen={showSuccessDialog}
-                message="Role deleted successfully"
-                onRedirect={() => setShowSuccessDialog(false)}
-                buttonText="Continue"
-                showButton={true}
-            />
-            <ErrorDialog
-                isOpen={showErrorDialog}
-                message={errorMessage}
-                onClose={() => setShowErrorDialog(false)}
-                buttonText="Continue"
-                showButton={true}
-            />
+
+            
+            {/* Toast Notification */}
+            {showToast && (
+                <ToastNotification
+                    toastType={toastType}
+                    toastMessage={toastMessage}
+                    setShowToast={setShowToast}
+                />
+            )}
             
             <div className="p-6">
                 <div className="flex items-center justify-between mb-6">

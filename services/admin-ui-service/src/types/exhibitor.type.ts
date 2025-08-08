@@ -1,3 +1,5 @@
+import { CompanyRep } from './companyRep.type';
+
 export interface ExhibitorData {
   user_id: number;
   email: string;
@@ -31,6 +33,7 @@ export interface ExhibitorData {
   // Related data
   parentExhibitor?: ExhibitorData;
   managedStaff?: ExhibitorData[];
+  companyReps?: CompanyRep[];
   
   // Computed fields
   full_name?: string;

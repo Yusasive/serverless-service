@@ -1368,7 +1368,7 @@ const WebsiteContent: React.FC = () => {
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-2">
                               {Object.entries(section.metadata).map(
                                 ([key, value]) =>
-                                  key !== "image_base64" && (
+                                  key !== "image_url" && (
                                     <div
                                       key={key}
                                       className="flex items-center gap-2 text-sm"

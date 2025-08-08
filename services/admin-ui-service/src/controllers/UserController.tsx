@@ -1,6 +1,7 @@
 import { UserRepository, LoginRequest, LoginResponse } from '../repository/UserRepository';
 import { User } from '@/types/user.type';
 import { CreateUserRequest } from '../repository/UserRepository';
+import { CompanyRep } from '@/types/companyRep.type';
 
 export class UserController {
   private static instance: UserController;
@@ -64,7 +65,7 @@ export class UserController {
 
   async getUsers(): Promise<User[]> {
     try {
-      const response = await this.repository.getUsers();
+      const response = await this.repository.getUsers('STAFF');
       return response.data;
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -127,6 +128,34 @@ export class UserController {
       }
     } catch (error) {
       console.error('Error fetching user by ID:', error);
+      throw error;
+    }
+  }
+
+  async deleteCompanyRep(id: number): Promise<void> {
+    try {
+      await this.repository.deleteCompanyRep(id);
+    } catch (error) {
+      console.error('Error deleting company rep:', error);
+      throw error;
+    }
+  }
+
+  async getCompanyReps(user_id: number): Promise<CompanyRep[]> {
+    try {
+      const response = await this.repository.getCompanyReps(user_id);
+      return response.data || [];
+    } catch (error) {
+      console.error('Error fetching company reps:', error);
+      throw error;
+    }
+  }
+
+  async updateCompanyRep(id: number, request: Partial<CompanyRep>): Promise<void> {
+    try {
+      await this.repository.updateCompanyRep(id, request);
+    } catch (error) {
+      console.error('Error updating company rep:', error);
       throw error;
     }
   }

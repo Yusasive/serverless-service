@@ -32,9 +32,7 @@ const ViewUser: React.FC<ViewUserProps> = ({ isOpen, onClose, user }) => {
                         />
                     </div>
                 );
-            case UserType.Organizer:
-            case UserType.Organizer_Staff:
-            case UserType.Super_Admin:
+            case UserType.Staff:
                 return (
                     <div className="grid grid-cols-2 gap-4">
                         <InfoRow label="Ticket Number" value={user.ticket_number} />

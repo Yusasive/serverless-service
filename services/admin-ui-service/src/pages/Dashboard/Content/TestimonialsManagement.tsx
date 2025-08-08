@@ -125,7 +125,7 @@ const TestimonialsManagement: React.FC = () => {
       title: testimonial.title,
       content: testimonial.content,
       image_file: undefined,
-      image_preview: testimonial.image_base64 || "",
+      image_preview: testimonial.image_url || "",
       date: testimonial.date || "",
       is_active: testimonial.is_active,
       display_order: testimonial.display_order,
@@ -192,7 +192,7 @@ const TestimonialsManagement: React.FC = () => {
       };
 
       if (formData.image_preview?.startsWith("data:image")) {
-        payload.image_base64 = formData.image_preview;
+        payload.image_url = formData.image_preview;
       }
 
       if (formData.image_removed) {
@@ -423,9 +423,9 @@ const TestimonialsManagement: React.FC = () => {
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      {testimonial.image_base64 && (
+                      {testimonial.image_url && (
                         <img
-                          src={testimonial.image_base64}
+                          src={testimonial.image_url}
                           alt={testimonial.name}
                           className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
                           onError={(e) => {

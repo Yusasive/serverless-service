@@ -1,7 +1,7 @@
 import { UserController } from "@/controllers/UserController";
 import React, { useState, useEffect } from "react";
-import { User, UserType } from "@/types/user.type";
-import { FaTrash, FaEdit, FaEye, FaBan } from 'react-icons/fa';
+import { User } from "@/types/user.type";
+import { FaTrash, FaEdit, FaEye } from 'react-icons/fa';
 import { TableColumn } from "react-data-table-component";
 import LoadingPage from '../../../components/common/LoadingPage';
 import ConfirmDialog from '../../../components/common/ConfirmDialog';
@@ -38,7 +38,6 @@ const Users: React.FC = () => {
             setError(null);
             try {
                 const response = await UserController.getInstance().getUsers();
-                console.log(response);
                 setUsers(response);
             } catch (err: any) {
                 setError(err);
@@ -98,65 +97,15 @@ const Users: React.FC = () => {
                     setUsers(users.filter(user => user.user_id !== selectedUserId));
                     setDialogSuccessMessage("User deleted successfully");
                     setShowSuccessDialog(true);
-                } else if (action === 'disable' || action === 'active') {
-                    let UserStatus = 'active';
-                    if (action === 'disable') {
-                        setShowLoadingMessage("Disabling user...");
-                        setDialogSuccessMessage("User disabled successfully");
-                        UserStatus = 'inactive';
-                    } else if (action === 'active') {
-                        setShowLoadingMessage("Enabling user...");
-                        setDialogSuccessMessage("User enabled successfully");
-                    }
-                    setLoading(true);
-                    if (selectedUser?.userType === UserType.Exhibitor) {
-                        await UserController.getInstance().updateUser({
-                            user_id: selectedUserId,
-                            status: UserStatus,
-                            userType: selectedUser.userType,
-                            email: selectedUser.email
-                        });
-                        setShowSuccessDialog(true);
-                        setUsers(users.map(user => 
-                            user.user_id === selectedUserId 
-                                ? { ...user, status: UserStatus }
-                                : user
-                        ));
-                    } else {
-                        // Only exhibitor users can be disabled
-                        setErrorMessage("Only exhibitor users can be disabled or enabled");
-                        setShowErrorDialog(true);
-                    }
                 }
                 setLoading(false);
 
             } catch (err: any) {
                 setError(err);
+                setErrorMessage(err.message);
             }
         }
         setSelectedUserId(null);
-    };
-
-    const handleDisable = async (id: number) => {
-        const userToDisable = users.find(user => user.user_id === id);
-        if (userToDisable) {
-            setSelectedUser(userToDisable);
-            setSelectedUserId(id);
-            setAction('disable');
-            setConfirmDialogMessage("Are you sure you want to disable this user?");
-            setShowConfirmDialog(true);
-        }
-    };
-
-    const handleEnable = async (id: number) => {
-        const userToEnable = users.find(user => user.user_id === id);
-        if (userToEnable) {
-            setSelectedUser(userToEnable);
-            setSelectedUserId(id);
-            setAction('active');
-            setConfirmDialogMessage("Are you sure you want to enable this user?");
-            setShowConfirmDialog(true);
-        }
     };
 
     const handleView = async (id: number) => {
@@ -182,8 +131,8 @@ const Users: React.FC = () => {
             selector: (row) => row.phone,
         },
         {
-            name: "User Type",
-            cell: (row) => <UserTypeBadge userType={row.user_type} />,
+            name: "Role",
+            cell: (row) => <UserTypeBadge userType={row.role || ''} />,
         },
         {
             name: "Status",
@@ -212,27 +161,6 @@ const Users: React.FC = () => {
                     >
                         <FaEye className="w-4 h-4" />
                     </button>
-
-                    {row.status !== 'inactive' && (
-                        <button
-                            onClick={() => handleDisable(row.user_id)}
-                            className="p-2 rounded-full bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-800 shadow-sm transition duration-200 ring-1 ring-transparent hover:ring-red-300"
-                            title="Disable"
-                    >
-                            <FaBan className="w-4 h-4" />
-                        </button>
-                    )}
-
-                    {row.status === 'inactive' && (
-                        <button
-                            onClick={() => handleEnable(row.user_id)}
-                            className="p-2 rounded-full bg-green-50 hover:bg-green-100 text-green-600 hover:text-green-800 shadow-sm transition duration-200 ring-1 ring-transparent hover:ring-green-300"
-                            title="Enable"
-                        >
-                            <FaBan className="w-4 h-4" />
-                        </button>
-                    )}
-
                     <button
                         onClick={() => handleEdit(row.user_id)}
                         className="p-2 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-800 shadow-sm transition duration-200 ring-1 ring-transparent hover:ring-blue-300"

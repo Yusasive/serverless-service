@@ -6,7 +6,6 @@ import {
   KeyIcon,
   BuildingStorefrontIcon,
   TableCellsIcon,
-  IdentificationIcon,
   ClockIcon,
   ArrowRightStartOnRectangleIcon,
   UserIcon,
@@ -52,7 +51,6 @@ const navigation: [NavItem, ...NavGroup[]] = [
         icon: BuildingStorefrontIcon,
       },
       { name: "Booths", href: "/dashboard/booths", icon: TableCellsIcon },
-      { name: "Staff", href: "/dashboard/staff", icon: IdentificationIcon },
       {
         name: "Transactions",
         href: "/dashboard/transactions",

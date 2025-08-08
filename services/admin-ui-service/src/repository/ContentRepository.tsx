@@ -32,7 +32,6 @@ export interface ContentItem {
   title: string;
   description?: string;
   image_url?: string;
-  image_base64: any;
   link_url?: string;
   metadata?: any;
   is_active: boolean;
@@ -47,7 +46,6 @@ export interface Testimonial {
   title: string;
   content: string;
   image_url?: string;
-  image_base64: any;
   date?: string;
   is_active: boolean;
   display_order: number;
@@ -358,12 +356,12 @@ export class ContentRepository {
   }
 
   static async getContactPageContent() {
-    const response = await this.request("/public/section/contact-page");
+    const response = await this.request("/section/contact-page");
     return response.success ? response.data : { section: null, items: [] };
   }
 
   static async getFooterContent() {
-    const response = await this.request("/public/section/footer");
+    const response = await this.request("/section/footer");
     return response.success ? response.data : { section: null, items: [] };
   }
 
@@ -372,7 +370,7 @@ export class ContentRepository {
     section: ContentSection | null;
     items: ContentItem[];
   }> {
-    const response = await this.request("/public/section/about-page");
+    const response = await this.request("/section/about-page");
     return response.data || { section: null, items: [] };
   }
 
@@ -381,7 +379,7 @@ export class ContentRepository {
     section: ContentSection | null;
     items: ContentItem[];
   }> {
-    const response = await this.request("/public/section/events");
+    const response = await this.request("/section/events");
     return response.data || { section: null, items: [] };
   }
 

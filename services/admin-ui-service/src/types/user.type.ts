@@ -1,10 +1,7 @@
 export enum UserType {
     Attendee = 'ATTENDEE',
-    Admin = 'ADMIN',
     Exhibitor = 'EXHIBITOR',
-    Organizer = 'ORGANIZER',
-    Organizer_Staff = 'ORGANIZER_STAFF',
-    Super_Admin = 'SUPER_ADMIN'
+    Staff = 'STAFF',
 }
 
 export interface Address {
@@ -45,6 +42,8 @@ export interface User extends SimpleUser {
 
     // Exhibitor specific fields
     company?: string | null;
+    local?: string | null;
+    booth_type?: string | null;
     rating?: number;
     status?: string;
     pin_code?: string;
@@ -56,6 +55,7 @@ export interface User extends SimpleUser {
     qr_code?: string;
     download?: string;
     staff_id?: string;
+    role?: string;
 }
 
 

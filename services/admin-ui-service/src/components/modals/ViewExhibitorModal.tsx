@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, Building, Mail, Phone, MapPin, Shield, Star, Globe } from 'lucide-react';
+import { X, User, Building, Mail, Phone, MapPin, Shield, Star, Globe, Users, Trash2 } from 'lucide-react';
 import { ExhibitorData } from '@/types/exhibitor.type';
+import { CompanyRep } from '@/types/companyRep.type';
 import Badge from '@/components/ui/Badge';
+import CompanyRepresentativeCard from '@/components/common/CompanyRepresentativeCard';
+import EditCompanyRepresentativeModal from '@/components/modals/EditCompanyRepresentativeModal';
+import ToastNotification from '@/components/common/ToastNotification';
+import { UserController } from '@/controllers/UserController';
 
 interface ViewExhibitorModalProps {
   exhibitor: ExhibitorData | null;
@@ -11,21 +16,49 @@ interface ViewExhibitorModalProps {
 
 const ViewExhibitorModal: React.FC<ViewExhibitorModalProps> = ({ exhibitor, isOpen, onClose }) => {
   const [error, setError] = useState<string | null>(null);
+  const [companyReps, setCompanyReps] = useState<CompanyRep[]>([]);
+  const [loadingReps, setLoadingReps] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<CompanyRep | null>(null);
+  const [editingRepresentative, setEditingRepresentative] = useState<CompanyRep | null>(null);
+  
+  // Toast notification state
+  const [showToast, setShowToast] = useState(false);
+  const [toastType, setToastType] = useState<'success' | 'error' | 'info' | 'warning'>('success');
+  const [toastMessage, setToastMessage] = useState('');
 
   useEffect(() => {
     if (isOpen && exhibitor) {
       setError(null);
+      fetchCompanyReps();
     }
   }, [isOpen, exhibitor]);
 
-//   const formatDate = (date: Date | string | null | undefined) => {
-//     if (!date) return 'N/A';
-//     return new Date(date).toLocaleDateString('en-US', {
-//       year: 'numeric',
-//       month: 'long',
-//       day: 'numeric',
-//     });
-//   };
+  // Auto-hide toast after 3 seconds
+  useEffect(() => {
+    if (showToast) {
+      const timer = setTimeout(() => {
+        setShowToast(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showToast]);
+
+
+  const fetchCompanyReps = async () => {
+    if (!exhibitor?.user_id) return;
+    
+    setLoadingReps(true);
+    try {
+      const response = await UserController.getInstance().getCompanyReps(exhibitor.user_id);
+      setCompanyReps(response || []);
+    } catch (error) {
+      console.error('Failed to fetch company representatives:', error);
+      setError('Failed to load company representatives');
+    } finally {
+      setLoadingReps(false);
+    }
+  };
+
 
   const getVerificationBadge = (verified: boolean) => {
     return (
@@ -81,6 +114,70 @@ const ViewExhibitorModal: React.FC<ViewExhibitorModalProps> = ({ exhibitor, isOp
         </div>
       </div>
     );
+  };
+
+  const handleEditRepresentative = (representative: CompanyRep) => {
+    setEditingRepresentative(representative);
+  };
+
+  const handleSaveRepresentative = async (updatedData: Partial<CompanyRep>) => {
+    try {
+      if (!updatedData.id) {
+        throw new Error('Representative ID is required');
+      }
+      console.log('Updating representative:', updatedData);
+      await UserController.getInstance().updateCompanyRep(updatedData.id, updatedData);
+      
+      setCompanyReps(prev => prev.map(rep => 
+        rep.id === updatedData.id 
+          ? { ...rep, ...updatedData }
+          : rep
+      ));
+      
+      setEditingRepresentative(null);
+      
+      // Show success toast
+      setToastType('success');
+      setToastMessage('Company representative updated successfully!');
+      setShowToast(true);
+    } catch (error) {
+      console.error('Failed to update representative:', error);
+      
+      // Show error toast
+      setToastType('error');
+      setToastMessage('Failed to update representative. Please try again.');
+      setShowToast(true);
+      
+      throw error;
+    }
+  };
+
+  const handleDeleteRepresentative = (representative: CompanyRep) => {
+    setShowDeleteConfirm(representative);
+  };
+
+  const confirmDeleteRepresentative = async () => {
+    if (!showDeleteConfirm) return;
+    
+    try {
+      console.log('Deleting representative:', showDeleteConfirm);
+      await UserController.getInstance().deleteCompanyRep(showDeleteConfirm.id);
+      
+      setCompanyReps(prev => prev.filter(rep => rep.id !== showDeleteConfirm.id));
+      setShowDeleteConfirm(null);
+      
+      // Show success toast
+      setToastType('success');
+      setToastMessage('Company representative deleted successfully!');
+      setShowToast(true);
+    } catch (error) {
+      console.error('Failed to delete representative:', error);
+      
+      // Show error toast
+      setToastType('error');
+      setToastMessage('Failed to delete representative. Please try again.');
+      setShowToast(true);
+    }
   };
 
   if (!isOpen || !exhibitor) return null;
@@ -282,7 +379,7 @@ const ViewExhibitorModal: React.FC<ViewExhibitorModalProps> = ({ exhibitor, isOp
                   </div>
                 </div>
 
-                {exhibitor.booth_count !== undefined && (
+                {/* {exhibitor.booth_count !== undefined && (
                   <div className="flex items-center space-x-3">
                     <Building className="w-5 h-5 text-orange-500" />
                     <div>
@@ -290,7 +387,7 @@ const ViewExhibitorModal: React.FC<ViewExhibitorModalProps> = ({ exhibitor, isOp
                       <p className="text-gray-900">{exhibitor.booth_count}</p>
                     </div>
                   </div>
-                )}
+                )} */}
               </div>
             </div>
           </div>
@@ -322,7 +419,41 @@ const ViewExhibitorModal: React.FC<ViewExhibitorModalProps> = ({ exhibitor, isOp
             </div>
           )}
 
-                     {/* Additional Information */}
+          {/* Company Representatives */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-medium text-gray-900">Company Representatives</h3>
+              {loadingReps && (
+                <div className="flex items-center space-x-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                  <span className="text-sm text-gray-500">Loading...</span>
+                </div>
+              )}
+            </div>
+            
+            {companyReps.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {companyReps.map((rep) => (
+                  <CompanyRepresentativeCard
+                    key={rep.id}
+                    representative={rep}
+                    onEdit={handleEditRepresentative}
+                    onDelete={handleDeleteRepresentative}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Users className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-2 text-sm font-medium text-gray-900">No representatives</h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  {loadingReps ? 'Loading representatives...' : 'This exhibitor has no company representatives.'}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Additional Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-gray-900">Additional Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -336,70 +467,12 @@ const ViewExhibitorModal: React.FC<ViewExhibitorModalProps> = ({ exhibitor, isOp
                     <p className="text-gray-900">{exhibitor.user_id}</p>
                   </div>
                 </div>
-
-                {exhibitor.stripe_id && (
-                  <div className="flex items-center space-x-3">
-                    <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center">
-                      <span className="text-xs font-bold text-gray-600">S</span>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Stripe ID</p>
-                      <p className="text-gray-900 font-mono text-sm">{exhibitor.stripe_id}</p>
-                    </div>
-                  </div>
-                )}
-
-                {exhibitor.payment_id && (
-                  <div className="flex items-center space-x-3">
-                    <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center">
-                      <span className="text-xs font-bold text-gray-600">P</span>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Payment ID</p>
-                      <p className="text-gray-900 font-mono text-sm">{exhibitor.payment_id}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-3">
-                {exhibitor.parent_exhibitor_id && (
-                  <div className="flex items-center space-x-3">
-                    <User className="w-5 h-5 text-indigo-500" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Parent Exhibitor ID</p>
-                      <p className="text-gray-900">{exhibitor.parent_exhibitor_id}</p>
-                    </div>
-                  </div>
-                )}
-
-                {exhibitor.pin_code && (
-                  <div className="flex items-center space-x-3">
-                    <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center">
-                      <span className="text-xs font-bold text-gray-600">PIN</span>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">PIN Code</p>
-                      <p className="text-gray-900 font-mono">{exhibitor.pin_code}</p>
-                    </div>
-                  </div>
-                )}
-
-                {exhibitor.status && (
-                  <div className="flex items-center space-x-3">
-                    <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center">
-                      <span className="text-xs font-bold text-gray-600">S</span>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Status</p>
-                      <p className="text-gray-900 capitalize">{exhibitor.status}</p>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>
         </div>
+
+        
 
         {/* Footer */}
         <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200">
@@ -411,8 +484,65 @@ const ViewExhibitorModal: React.FC<ViewExhibitorModalProps> = ({ exhibitor, isOp
           </button>
         </div>
       </div>
-    </div>
-  );
-};
+
+             {/* Delete Confirmation Modal */}
+       {showDeleteConfirm && (
+         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
+           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+             <div className="flex items-center space-x-3 mb-4">
+               <div className="flex-shrink-0">
+                 <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                   <Trash2 className="w-5 h-5 text-red-600" />
+                 </div>
+               </div>
+               <div>
+                 <h3 className="text-lg font-medium text-gray-900">Delete Representative</h3>
+                 <p className="text-sm text-gray-500">This action cannot be undone.</p>
+               </div>
+             </div>
+             
+             <div className="mb-6">
+               <p className="text-sm text-gray-700">
+                 Are you sure you want to delete <span className="font-medium">{showDeleteConfirm.name}</span> from the company representatives?
+               </p>
+             </div>
+
+             <div className="flex items-center justify-end space-x-3">
+               <button
+                 onClick={() => setShowDeleteConfirm(null)}
+                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+               >
+                 Cancel
+               </button>
+               <button
+                 onClick={confirmDeleteRepresentative}
+                 className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+               >
+                 Delete
+               </button>
+             </div>
+           </div>
+         </div>
+       )}
+
+               {/* Edit Representative Modal */}
+        <EditCompanyRepresentativeModal
+          representative={editingRepresentative}
+          isOpen={!!editingRepresentative}
+          onClose={() => setEditingRepresentative(null)}
+          onSave={handleSaveRepresentative}
+        />
+
+        {/* Toast Notification */}
+        {showToast && (
+          <ToastNotification
+            toastType={toastType}
+            toastMessage={toastMessage}
+            setShowToast={setShowToast}
+          />
+        )}
+     </div>
+   );
+ };
 
 export default ViewExhibitorModal; 

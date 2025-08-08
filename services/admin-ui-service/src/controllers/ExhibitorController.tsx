@@ -110,8 +110,11 @@ export class ExhibitorController {
         stripe_id: updates.stripe_id,
         payment_id: updates.payment_id,
         parent_exhibitor_id: updates.parent_exhibitor_id,
+        user_type: updates.user_type as UserType,
         // Exhibitor specific fields
         company: updates.company,
+        local: updates.local,
+        booth_type: updates.booth_type,
         rating: updates.rating,
         status: updates.status,
         pin_code: updates.pin_code,

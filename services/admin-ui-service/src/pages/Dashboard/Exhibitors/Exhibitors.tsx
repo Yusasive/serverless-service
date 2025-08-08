@@ -8,7 +8,11 @@ import { BoothSector } from '@/types/booth.type';
 import LoadingOverlay from '@/components/common/LoadingOverlay';
 import Badge from '@/components/ui/Badge';
 import { Building2, Users, Shield, MapPin, Download } from 'lucide-react';
+import { FaBan, FaEdit, FaEye, FaCheck } from 'react-icons/fa';
 import ViewExhibitorModal from '@/components/modals/ViewExhibitorModal';
+import EditExhibitorModal from '@/components/modals/EditExhibitorModal';
+import ConfirmDialog from '@/components/common/ConfirmDialog';
+import ToastNotification from '@/components/common/ToastNotification';
 
 const Exhibitors: React.FC = () => {
   const [allExhibitors, setAllExhibitors] = useState<ExhibitorData[]>([]);
@@ -31,9 +35,23 @@ const Exhibitors: React.FC = () => {
   const [exportLoading, setExportLoading] = useState(false);
   const [selectedExhibitor, setSelectedExhibitor] = useState<ExhibitorData | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [confirmDialogMessage, setConfirmDialogMessage] = useState('');
+  const [confirmDialogAction, setConfirmDialogAction] = useState<() => void>(() => {});
+  const [actionLoading, setActionLoading] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastType, setToastType] = useState<'success' | 'error' | 'info' | 'warning'>('success');
+  const [toastMessage, setToastMessage] = useState('');
 
   const exhibitorController = ExhibitorController.getInstance();
   const boothController = new BoothController();
+
+  const displayToast = (type: 'success' | 'error' | 'info' | 'warning', message: string) => {
+    setToastType(type);
+    setToastMessage(message);
+    setShowToast(true);
+  };
 
   useEffect(() => {
     loadExhibitors();
@@ -43,6 +61,17 @@ const Exhibitors: React.FC = () => {
   useEffect(() => {
     applyFilters();
   }, [allExhibitors, selectedVerification, selectedSector, searchCompany]);
+
+  // Auto-hide toast after 5 seconds
+  useEffect(() => {
+    if (showToast) {
+      const timer = setTimeout(() => {
+        setShowToast(false);
+      }, 5000); // 5 seconds
+
+      return () => clearTimeout(timer);
+    }
+  }, [showToast]);
 
   // Add a retry mechanism for authentication errors
   const handleRetry = () => {
@@ -203,33 +232,35 @@ const Exhibitors: React.FC = () => {
       cell: (row) => (
         <div className="flex items-center space-x-2">
           <button
-            onClick={() => handleViewExhibitor(row)}
-            className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors"
-            title="View Exhibitor"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
+             onClick={() => handleViewExhibitor(row)}
+             className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors"
+             title="View Exhibitor"
+           >
+             <FaEye className="w-4 h-4" />
           </button>
           <button
-            onClick={() => handleEditExhibitor(row)}
-            className="p-1 text-green-600 hover:text-green-800 hover:bg-green-50 rounded transition-colors"
-            title="Edit Exhibitor"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
+             onClick={() => handleEditExhibitor(row)}
+             className="p-1 text-green-600 hover:text-green-800 hover:bg-green-50 rounded transition-colors"
+             title="Edit Exhibitor"
+           >
+             <FaEdit className="w-4 h-4" />
           </button>
           <button
-            onClick={() => handleDeleteExhibitor(row)}
-            className="p-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
-            title="Delete Exhibitor"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-          </button>
+             onClick={() => handleToggleExhibitorStatus(row)}
+             className={`p-1 rounded transition-colors ${
+               row.is_active 
+                 ? 'text-red-600 hover:text-red-800 hover:bg-red-50' 
+                 : 'text-green-600 hover:text-green-800 hover:bg-green-50'
+             }`}
+             title={row.is_active ? 'Disable Exhibitor' : 'Enable Exhibitor'}
+             disabled={actionLoading}
+           >
+             {row.is_active ? (
+               <FaBan className="w-4 h-4" />
+             ) : (
+               <FaCheck className="w-4 h-4" />
+             )}
+           </button>
         </div>
       ),
     },
@@ -241,12 +272,62 @@ const Exhibitors: React.FC = () => {
   };
 
   const handleEditExhibitor = (exhibitor: ExhibitorData) => {
-    alert(`Editing exhibitor: ${exhibitor.full_name}`);
+    setSelectedExhibitor(exhibitor);
+    setIsEditModalOpen(true);
   };
 
-  const handleDeleteExhibitor = (exhibitor: ExhibitorData) => {
-    if (window.confirm(`Are you sure you want to delete exhibitor: ${exhibitor.full_name}?`)) {
-      alert(`Deleting exhibitor: ${exhibitor.full_name}`);
+  const handleSaveExhibitor = (updatedExhibitor: ExhibitorData) => {
+    // Update the local state
+    const updatedExhibitors = allExhibitors.map(e => 
+      e.user_id === updatedExhibitor.user_id ? updatedExhibitor : e
+    );
+    setAllExhibitors(updatedExhibitors);
+    
+    // Reload stats
+    exhibitorController.getExhibitorStats().then(statsData => {
+      setStats(statsData);
+    });
+  };
+
+  const handleToggleExhibitorStatus = (exhibitor: ExhibitorData) => {
+    const isCurrentlyActive = exhibitor.is_active;
+    const action = isCurrentlyActive ? 'disable' : 'enable';
+    const message = `Are you sure you want to ${action} the account for exhibitor: ${exhibitor.full_name}?`;
+    
+    setConfirmDialogMessage(message);
+    setConfirmDialogAction(() => () => performToggleExhibitorStatus(exhibitor, !isCurrentlyActive));
+    setShowConfirmDialog(true);
+  };
+
+  const performToggleExhibitorStatus = async (exhibitor: ExhibitorData, newStatus: boolean) => {
+    try {
+      setActionLoading(true);
+      setShowConfirmDialog(false);
+      
+      await exhibitorController.updateExhibitor(exhibitor.user_id, { 
+        is_active: newStatus,
+        email: exhibitor.email,
+        user_type: exhibitor.user_type
+      });
+      
+      // Update the local state
+      const updatedExhibitors = allExhibitors.map(e => 
+        e.user_id === exhibitor.user_id ? { ...e, is_active: newStatus } : e
+      );
+      setAllExhibitors(updatedExhibitors);
+      
+      // Reload stats
+      const statsData = await exhibitorController.getExhibitorStats();
+      setStats(statsData);
+      
+      const action = newStatus ? 'enabled' : 'disabled';
+      displayToast('success', `Exhibitor ${exhibitor.full_name} has been ${action} successfully.`);
+      
+    } catch (error) {
+      console.error('Error toggling exhibitor status:', error);
+      displayToast('error', `Failed to ${newStatus ? 'enable' : 'disable'} exhibitor. Please try again.`);
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -275,13 +356,13 @@ const Exhibitors: React.FC = () => {
           
         } catch (downloadError) {
           console.error('Download failed:', downloadError);
-          alert('Download failed. Please try again.');
+          displayToast('error', 'Download failed. Please try again.');
         }
       } else {
-        alert(result.error || 'Export failed');
+        displayToast('error', result.error || 'Export failed');
       }
     } catch (error) {
-      alert('Export failed. Please try again.');
+      displayToast('error', 'Export failed. Please try again.');
     } finally {
       setExportLoading(false);
     }
@@ -506,17 +587,49 @@ const Exhibitors: React.FC = () => {
         pagination={true}
       />
 
-      {/* View Exhibitor Modal */}
-      <ViewExhibitorModal
-        exhibitor={selectedExhibitor}
-        isOpen={isViewModalOpen}
-        onClose={() => {
-          setIsViewModalOpen(false);
-          setSelectedExhibitor(null);
-        }}
-      />
-    </div>
-  );
-};
+             {/* View Exhibitor Modal */}
+       <ViewExhibitorModal
+         exhibitor={selectedExhibitor}
+         isOpen={isViewModalOpen}
+         onClose={() => {
+           setIsViewModalOpen(false);
+           setSelectedExhibitor(null);
+         }}
+       />
+
+       {/* Edit Exhibitor Modal */}
+       <EditExhibitorModal
+         exhibitor={selectedExhibitor}
+         isOpen={isEditModalOpen}
+         onClose={() => {
+           setIsEditModalOpen(false);
+           setSelectedExhibitor(null);
+         }}
+         onSave={handleSaveExhibitor}
+       />
+
+               {/* Confirmation Dialog */}
+        <ConfirmDialog
+          message={confirmDialogMessage}
+          isOpen={showConfirmDialog}
+          onConfirm={() => {
+            confirmDialogAction();
+          }}
+          onCancel={() => setShowConfirmDialog(false)}
+          confirmText={actionLoading ? 'Processing...' : 'Confirm'}
+          cancelText="Cancel"
+        />
+
+        {/* Toast Notification */}
+        {showToast && (
+          <ToastNotification
+            toastType={toastType}
+            toastMessage={toastMessage}
+            setShowToast={setShowToast}
+          />
+        )}
+      </div>
+    );
+  };
 
 export default Exhibitors;
