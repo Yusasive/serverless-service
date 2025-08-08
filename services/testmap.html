@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2025 Lagos International Trade Fair - Comprehensive Interactive Site Plan</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+            overflow-x: auto;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 1.8em;
+            font-weight: bold;
+        }
+        
+        .instructions {
+            background: #3498db;
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .legend {
+            background: #ecf0f1;
+            padding: 15px 20px;
+            border-bottom: 2px solid #bdc3c7;
+        }
+        
+        .legend h3 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+        }
+        
+        .legend-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            padding: 5px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            margin-right: 10px;
+            border: 1px solid #333;
+        }
+        
+        .site-plan-container {
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            background: white;
+        }
+        
+        .site-plan-wrapper {
+            display: inline-block;
+            position: relative;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            border: 2px solid #333;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .site-plan-image {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        /* SVG Overlay */
+        .svg-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        
+        /* Sector styling */
+        .sector-area {
+            fill: rgba(255, 255, 255, 0);
+            stroke: transparent;
+            stroke-width: 2;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            pointer-events: all;
+        }
+        
+        .sector-area:hover {
+            fill: rgba(255, 255, 255, 0.4);
+            stroke-width: 3;
+            filter: drop-shadow(0 3px 6px rgba(0,0,0,0.3));
+        }
+        
+        .cga-sector:hover { stroke: #9C27B0; fill: rgba(156, 39, 176, 0.4); }
+        .eei-sector:hover { stroke: #2196F3; fill: rgba(33, 150, 243, 0.4); }
+        .fda-sector:hover { stroke: #4CAF50; fill: rgba(76, 175, 80, 0.4); }
+        .hct-sector:hover { stroke: #FF9800; fill: rgba(255, 152, 0, 0.4); }
+        .ta-sector:hover { stroke: #00BCD4; fill: rgba(0, 188, 212, 0.4); }
+        .rbf-sector:hover { stroke: #795548; fill: rgba(121, 85, 72, 0.4); }
+        .cog-sector:hover { stroke: #FF5722; fill: rgba(255, 87, 34, 0.4); }
+        .oth-sector:hover { stroke: #E91E63; fill: rgba(233, 30, 99, 0.4); }
+        .africa-hall:hover { stroke: #c0392b; fill: rgba(192, 57, 43, 0.4); }
+        .hall-a:hover { stroke: #8e44ad; fill: rgba(142, 68, 173, 0.4); }
+        .hall-b:hover { stroke: #27ae60; fill: rgba(39, 174, 96, 0.4); }
+        .international-hall:hover { stroke: #f39c12; fill: rgba(243, 156, 18, 0.4); }
+        
+        /* Debug mode styling */
+        .debug-mode .sector-area {
+            fill: rgba(255, 0, 0, 0.2) !important;
+            stroke: red !important;
+            stroke-width: 2 !important;
+        }
+        
+        /* Info Panel */
+        .info-panel {
+            position: fixed;
+            top: 0;
+            right: -500px;
+            width: 480px;
+            height: 100vh;
+            background: white;
+            box-shadow: -5px 0 25px rgba(0,0,0,0.3);
+            padding: 0;
+            transition: all 0.4s ease;
+            z-index: 1000;
+            overflow-y: auto;
+            border-left: 3px solid #333;
+        }
+        
+        .info-panel.active {
+            right: 0;
+        }
+        
+        .panel-header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .panel-header h3 {
+            margin: 0;
+            font-size: 1.4em;
+            padding-right: 50px;
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        
+        .close-btn:hover {
+            background: #c0392b;
+            transform: scale(1.1);
+        }
+        
+        .panel-content {
+            padding: 25px;
+        }
+        
+        .booth-count-badge {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1em;
+            margin: 15px 0;
+        }
+        
+        .hall-layout {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .hall-layout h4 {
+            margin: 0 0 15px 0;
+            color: #2c3e50;
+            font-size: 1.2em;
+        }
+        
+        .hall-image {
+            max-width: 100%;
+            height: auto;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        
+        .booth-info {
+            background: #ecf0f1;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .booth-info h4 {
+            margin: 0 0 15px 0;
+            color: #2c3e50;
+        }
+        
+        .booth-types {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        
+        .booth-type {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+            text-align: center;
+        }
+        
+        .booth-type.size-6 {
+            border-color: #27ae60;
+            background: #e8f5e8;
+        }
+        
+        .booth-type.size-9 {
+            border-color: #e74c3c;
+            background: #fdeaea;
+        }
+        
+        .booth-type h5 {
+            margin: 0 0 10px 0;
+            font-size: 1.1em;
+        }
+        
+        .booth-ranges {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .booth-ranges h4 {
+            margin: 0 0 15px 0;
+            color: #2c3e50;
+        }
+        
+        .booth-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 8px;
+            margin-top: 15px;
+        }
+        
+        .booth-item {
+            background: white;
+            padding: 8px;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 11px;
+            border: 1px solid #ddd;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+        
+        .booth-item:hover {
+            background: #e3f2fd;
+            border-color: #2196F3;
+            transform: scale(1.05);
+        }
+        
+        .booth-item.size-6 {
+            background: #e8f5e8;
+            border-color: #27ae60;
+        }
+        
+        .booth-item.size-9 {
+            background: #fdeaea;
+            border-color: #e74c3c;
+        }
+        
+        .sector-description {
+            line-height: 1.6;
+            margin: 20px 0;
+            color: #555;
+        }
+        
+        .contact-info {
+            background: #3498db;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .info-panel {
+                right: -100%;
+                width: 95%;
+            }
+            
+            .info-panel.active {
+                right: 0;
+            }
+            
+            .booth-types {
+                grid-template-columns: 1fr;
+            }
+            
+            .legend-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Zoom controls */
+        .zoom-controls {
+            position: fixed;
+            top: 120px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid #333;
+            border-radius: 8px;
+            padding: 10px;
+            z-index: 100;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .zoom-btn {
+            display: block;
+            width: 40px;
+            height: 40px;
+            margin: 5px 0;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 18px;
+            transition: all 0.2s ease;
+        }
+        
+        .zoom-btn:hover {
+            background: #2980b9;
+            transform: scale(1.05);
+        }
+        
+        .debug-btn {
+            background: #e67e22 !important;
+            font-size: 12px !important;
+        }
+        
+        .debug-btn:hover {
+            background: #d35400 !important;
+        }
+        
+        /* Coordinate Helper */
+        .coordinate-display {
+            position: fixed;
+            bottom: 250px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            z-index: 100;
+            display: none;
+        }
+        
+        .status-display {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(46, 125, 50, 0.9);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>2025 LAGOS INTERNATIONAL TRADE FAIR</h1>
+            <p>Tafawa Balewa Square - Comprehensive Interactive Site Plan</p>
+        </div>
+        
+        <div class="instructions">
+            🖱️ Click on any colored sector or hall to view detailed information. Sectors are traced from the actual site plan with tilted polygon coordinates.
+        </div>
+        
+        <div class="legend">
+            <h3>🎨 Sector Legend</h3>
+            <div class="legend-grid">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #9C27B0;"></div>
+                    <span>CGA - Corporate Organizations & Government Agencies (57)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #2196F3;"></div>
+                    <span>EEI - ICT & Electronics Products (72)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #4CAF50;"></div>
+                    <span>FDA - Food, Drinks, Agriculture & Allied (286)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #FF9800;"></div>
+                    <span>HCT - Household Cosmetics & Textile (152)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #00BCD4;"></div>
+                    <span>TA - Transport and Allied/Power (132)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #795548;"></div>
+                    <span>RBF - Real Estate, Building Furniture (16)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #FF5722;"></div>
+                    <span>COG - Conglomerate (50)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #E91E63;"></div>
+                    <span>OTH - Publication, Healthcare & Sport (98)</span>
+                </div>
+            </div>
+            <h3 style="margin-top: 15px;">🏛️ Halls with Detailed Layouts</h3>
+            <div class="legend-grid">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #c0392b;"></div>
+                    <span>Africa Hall (58 booths)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #8e44ad;"></div>
+                    <span>Hall A (47 booths)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #27ae60;"></div>
+                    <span>Hall B (97 booths)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #f39c12;"></div>
+                    <span>International Hall (58 booths)</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Zoom Controls -->
+        <div class="zoom-controls">
+            <button class="zoom-btn" onclick="zoomIn()" title="Zoom In">+</button>
+            <button class="zoom-btn" onclick="zoomOut()" title="Zoom Out">-</button>
+            <button class="zoom-btn" onclick="resetZoom()" style="font-size: 12px;" title="Reset View">⌂</button>
+            <button class="zoom-btn debug-btn" onclick="toggleDebug()" title="Show/Hide All Outlines">🎯</button>
+            <button class="zoom-btn" onclick="toggleCoordinates()" style="font-size: 12px;" title="Show Coordinates">📍</button>
+        </div>
+        
+        <!-- Coordinate Display -->
+        <div class="coordinate-display" id="coordinateDisplay">
+            X: <span id="mouseX">0</span>, Y: <span id="mouseY">0</span>
+        </div>
+        
+        <!-- Status Display -->
+        <div class="status-display">
+            ✅ Sectors Traced from Site Plan<br>
+            🎯 Tilted Polygon Coordinates<br>
+            📊 All Visible Colored Areas
+        </div>
+        
+        <div class="site-plan-container">
+            <div class="site-plan-wrapper" id="siteWrapper">
+                <!-- Main Site Plan Image -->
+                <img src="2025litf.png" 
+                     alt="2025 Lagos International Trade Fair Site Plan" 
+                     class="site-plan-image"
+                     id="mainSitePlan" />
+                
+                <!-- SVG Overlay with ALL Sectors and Halls -->
+                <svg class="svg-overlay" id="svgOverlay" viewBox="0 0 3000 4000" preserveAspectRatio="none">
+                    
+                    <!-- HALLS with detailed sub-layouts -->
+                    <!-- Africa Hall -->
+                     <!-- 1671,2545 1887,2326 1969,2393 1737,2608 -->
+                    <polygon class="sector-area africa-hall" 
+                             points="1670,2545,1908,2330,1968,2395,1734,2606" 
+                             onclick="showAfricaHall()"
+                             data-sector="AFRICA_HALL">
+                        <title>🏛️ Africa Hall - Click to view booth layout (58 booths)</title>
+                    </polygon>
+                    
+                    <!-- Hall A - Traced from site plan upper section -->
+                    <polygon class="sector-area hall-a" 
+                             points="1786,1872,1948,1722,2062,1832,1900,1980" 
+                             onclick="showHallA()"
+                             data-sector="HALL_A">
+                        <title>🏛️ Hall A - Click to view booth layout (47 booths)</title>
+                    </polygon>
+                    
+                    <!-- Hall B - Traced from site plan middle-left section -->
+                    <polygon class="sector-area hall-b" 
+                             points="1879,2269,2137,2036,2254,2142,1995,2376" 
+                             onclick="showHallB()"
+                             data-sector="HALL_B">
+                        <title>🏛️ Hall B - Click to view booth layout (97 booths)</title>
+                    </polygon>
+                    
+                    <!-- International Hall - Traced from site plan middle section -->
+                    <polygon class="sector-area international-hall" 
+                             points="1594,2472,1831,2258,1896,2325,1662,2535" 
+                             onclick="showInternationalHall()"
+                             data-sector="INTERNATIONAL_HALL">
+                        <title>🏛️ International Hall - Click to view booth layout (58 booths)</title>
+                    </polygon>
+                    
+                    <!-- MAIN SECTORS - Traced from actual site plan colored areas -->
+                    <!-- HCT Sector 1 - Purple area in upper-right section -->
+                    <polygon class="sector-area hct-sector" 
+                             points="2031,1646,2089,1691,2144,1646,2256,1750,2169,1827,2003,1671" 
+                             onclick="showSectorInfo('HCT')"
+                             data-sector="HCT">
+                        <title>💄 HCT - Household Cosmetics & Textile Products (152 booths)</title>
+                    </polygon>
+                    
+                    <!-- HCT Sector 2 - Purple area in middle-right section -->
+                    <polygon class="sector-area hct-sector" 
+                             points="1861,2053,2102,1841,2306,2032,2234,2095,2151,2018,2135,2000,1971,2155" 
+                             onclick="showSectorInfo('HCT')"
+                             data-sector="HCT">
+                        <title>💄 HCT - Household Cosmetics & Textile Products</title>
+                    </polygon>
+                    
+                    <!-- HCT Sector 3 - Purple area in lower-right section -->
+                    <!-- <polygon class="sector-area hct-sector" 
+                             points="2080,1650 2400,1580 2450,1780 2130,1850" 
+                             onclick="showSectorInfo('HCT')"
+                             data-sector="HCT">
+                        <title>💄 HCT - Household Cosmetics & Textile Products</title>
+                    </polygon> -->
+                    
+                    <!-- FDA Sector 1 - Green area in middle section -->
+                    <polygon class="sector-area fda-sector" 
+                             points="1450,1670,1687,1452,1932,1681,1830,1775,1671,1619,1623,1602,1500,1717" 
+                             onclick="showSectorInfo('FDA')"
+                             data-sector="FDA">
+                        <title>🌾 FDA - Food, Drinks, Agriculture & Allied Products (286 booths)</title>
+                    </polygon>
+                    
+                    <!-- FDA Sector 2 - Green area in lower-middle section -->
+                    <polygon class="sector-area fda-sector" 
+                             points="1589,1286,1715,1170,2050,1484,1956,1566,2005,1619,1976,1648,1813,1494" 
+                             onclick="showSectorInfo('FDA')"
+                             data-sector="FDA">
+                        <title>🌾 FDA - Food, Drinks, Agriculture & Allied Products</title>
+                    </polygon>
+                    
+                    <!-- EEI Sector 1 - Blue area in upper section -->
+                    <polygon class="sector-area eei-sector" 
+                             points="1072,2012,1426,1690,1481,1740,1124,2060" 
+                             onclick="showSectorInfo('EEI')"
+                             data-sector="EEI">
+                        <title>💻 EEI - ICT & Electronics Products (72 booths)</title>
+                    </polygon>
+                    
+                    <!-- COG Sector - Yellow area in upper-right -->
+                    <polygon class="sector-area cog-sector" 
+                             points="1487,2395,1765,2157,1822,2245,1572,2474" 
+                             onclick="showSectorInfo('COG')"
+                             data-sector="COG">
+                        <title>🏭 COG - Conglomerate (50 booths)</title>
+                    </polygon>
+                    <!-- COG Sector - Yellow area in upper-right -->
+                    <polygon class="sector-area cog-sector" 
+                             points="1779,1108,2568,1847,2540,1868,1758,1129" 
+                             onclick="showSectorInfo('COG')"
+                             data-sector="COG">
+                        <title>🏭 COG - New Conglomerate (50 booths)</title>
+                    </polygon>
+                    
+                    <!-- TA Sector - Orange area in lower section -->
+                    <polygon class="sector-area ta-sector" 
+                             points="1419,3054,1653,2831,1818,2989,1582,3208" 
+                             onclick="showSectorInfo('TA')"
+                             data-sector="TA">
+                        <title>🚗 TA - Transport and Allied/Power Products (132 booths)</title>
+                    </polygon>
+                    
+                    <!-- CGA Sector - Red area in lower-left -->
+                    <polygon class="sector-area cga-sector" 
+                             points="905,1909,1716,2674,1688,2699,876,1933" 
+                             onclick="showSectorInfo('CGA')"
+                             data-sector="CGA">
+                        <title>🏢 CGA - Corporate Organizations & Government Agencies (57 booths)</title>
+                    </polygon>
+                    
+                    <!-- Additional colored sectors from site plan -->
+                    <!-- RBF Sector - Brown area -->
+                    <polygon class="sector-area rbf-sector" 
+                             points="1769,2141,1839,2077,1948,2183,1878,2245" 
+                             onclick="showSectorInfo('RBF')"
+                             data-sector="RBF">
+                        <title>🏠 RBF - Real Estate, Building Furniture & Fittings (16 booths)</title>
+                    </polygon>
+                    
+                    <!-- OTH Sector - Pink area -->
+                    <polygon class="sector-area oth-sector" 
+                             points="2285,1774,2477,1956,2387,2034,2197,1855" 
+                             onclick="showSectorInfo('OTH')"
+                             data-sector="OTH">
+                        <title>📚 OTH - Publication, Healthcare & Sport Products (98 booths)</title>
+                    </polygon>
+                    
+                </svg>
+            </div>
+        </div>
+    </div>
+    
+    <div class="info-panel" id="infoPanel">
+        <div class="panel-header">
+            <h3 id="panelTitle">Trade Fair Information</h3>
+            <button class="close-btn" onclick="closeInfoPanel()">×</button>
+        </div>
+        <div class="panel-content" id="panelContent">
+            <!-- Content will be dynamically loaded here -->
+        </div>
+    </div>
+    
+    <script>
+        let currentZoom = 1;
+        let debugMode = false;
+        let coordinatesMode = false;
+        
+        // Sector data structure
+        const sectorData = {
+            'CGA': {
+                name: 'Corporate Organizations & Government Agencies',
+                description: 'Government ministries, agencies, corporate organizations, NGOs, and institutional exhibitors displaying their services and initiatives.',
+                color: '#9C27B0',
+                boothCount: 57,
+                ranges: ['CGA101-CGA157']
+            },
+            'EEI': {
+                name: 'ICT & Electronics Products',
+                description: 'Latest technology, electronics, computers, mobile devices, software solutions, telecommunications equipment, and digital innovations.',
+                color: '#2196F3',
+                boothCount: 72,
+                ranges: ['EEI101-EEI104', 'EEI201-EEI208', 'EEI301-EEI308', 'EEI401-EEI408', 'EEI501-EEI508', 'EEI601-EEI608', 'EEI701-EEI708', 'EEI801-EEI808', 'EEI901-EEI908']
+            },
+            'FDA': {
+                name: 'Food, Drinks, Agriculture & Allied Products',
+                description: 'Food products, beverages, agricultural equipment, farming technology, organic products, livestock, and agro-processing solutions.',
+                color: '#4CAF50',
+                boothCount: 286,
+                ranges: ['FDA101-FDA108', 'FDA210-FDA217', 'FDA319-FDA326', 'FDA419-FDA438', 'FDA501-FDA544', 'FDA601-FDA644', 'FDA701-FDA750', 'FDA801-FDA821', 'FDA901-FDA942', 'FDA1001-FDA1041']
+            },
+            'HCT': {
+                name: 'Household Cosmetics & Textile Products',
+                description: 'Beauty products, skincare, makeup, household items, cleaning products, textiles, fabrics, clothing, and fashion accessories.',
+                color: '#FF9800',
+                boothCount: 152,
+                ranges: ['HCT101-HCT112', 'HCT201-HCT212', 'HCT301-HCT312', 'HCT401-HCT412', 'HCT501-HCT524', 'HCT601-HCT624', 'HCT701-HCT724', 'HCT801-HCT808', 'HCT901-HCT916', 'HCT1001-HCT1008']
+            },
+            'TA': {
+                name: 'Transport and Allied/Power Products',
+                description: 'Automotive industry, transportation solutions, logistics, power generation equipment, energy solutions, and related services.',
+                color: '#00BCD4',
+                boothCount: 132,
+                ranges: ['TA101-TA122', 'TA201-TA222', 'TA301-TA322', 'TA401-TA421', 'TA501-TA522', 'TA601-TA622']
+            },
+            'RBF': {
+                name: 'Real Estate, Building Furniture & Fittings',
+                description: 'Property developers, construction companies, furniture manufacturers, interior design, building materials, and home improvement solutions.',
+                color: '#795548',
+                boothCount: 16,
+                ranges: ['RBF101-RBF104', 'RBF201-RBF212']
+            },
+            'COG': {
+                name: 'Conglomerate',
+                description: 'Large multi-industry corporations and business conglomerates showcasing diverse products and services across multiple sectors.',
+                color: '#FF5722',
+                boothCount: 50,
+                ranges: ['COG101-COG108', 'COG201-COG208', 'COG301-COG308', 'COG401-COG408', 'COG501-COG508', 'COG601-COG608', 'COG701-COG706']
+            },
+            'NCOG': {
+                name: 'New Conglomerate',
+                description: 'Large multi-industry corporations and business conglomerates showcasing diverse products and services across multiple sectors.',
+                color: '#FF5722',
+                boothCount: 50,
+                ranges: ['COG101-COG108', 'COG201-COG208', 'COG301-COG308', 'COG401-COG408', 'COG501-COG508', 'COG601-COG608', 'COG701-COG706']
+            },
+            'OTH': {
+                name: 'Publication, Healthcare & Sport Products',
+                description: 'Publishing houses, educational materials, healthcare products, medical equipment, sports goods, fitness equipment, and miscellaneous products.',
+                color: '#E91E63',
+                boothCount: 98,
+                ranges: ['OTH101-OTH160', 'OTH201-OTH214', 'OTH301-OTH328', 'OTH401-OTH412', 'OTH502', 'OTH803']
+            }
+        };
+        
+        // Zoom functionality
+        function zoomIn() {
+            currentZoom = Math.min(currentZoom * 1.2, 3);
+            updateZoom();
+        }
+        
+        function zoomOut() {
+            currentZoom = Math.max(currentZoom / 1.2, 0.5);
+            updateZoom();
+        }
+        
+        function resetZoom() {
+            currentZoom = 1;
+            updateZoom();
+        }
+        
+        function updateZoom() {
+            const wrapper = document.getElementById('siteWrapper');
+            wrapper.style.transform = `scale(${currentZoom})`;
+        }
+        
+        // Debug mode to visualize all outlines
+        function toggleDebug() {
+            debugMode = !debugMode;
+            const svgOverlay = document.getElementById('svgOverlay');
+            
+            if (debugMode) {
+                svgOverlay.classList.add('debug-mode');
+                console.log('Debug Mode ON - All sector outlines visible');
+            } else {
+                svgOverlay.classList.remove('debug-mode');
+                console.log('Debug Mode OFF - All sector outlines hidden');
+            }
+        }
+        
+        // Coordinate tracking
+        function toggleCoordinates() {
+            coordinatesMode = !coordinatesMode;
+            const display = document.getElementById('coordinateDisplay');
+            
+            if (coordinatesMode) {
+                display.style.display = 'block';
+                addCoordinateTracking();
+                console.log('Coordinate tracking ON');
+            } else {
+                display.style.display = 'none';
+                removeCoordinateTracking();
+                console.log('Coordinate tracking OFF');
+            }
+        }
+        
+        function addCoordinateTracking() {
+            const image = document.getElementById('mainSitePlan');
+            const mouseX = document.getElementById('mouseX');
+            const mouseY = document.getElementById('mouseY');
+            
+            image.addEventListener('mousemove', function(e) {
+                const rect = image.getBoundingClientRect();
+                const x = Math.round((e.clientX - rect.left) * (3000 / rect.width));
+                const y = Math.round((e.clientY - rect.top) * (4000 / rect.height));
+                
+                mouseX.textContent = x;
+                mouseY.textContent = y;
+            });
+        }
+        
+        function removeCoordinateTracking() {
+            const image = document.getElementById('mainSitePlan');
+            image.removeEventListener('mousemove', addCoordinateTracking);
+        }
+        
+        // Sector information function
+        function showSectorInfo(sectorCode) {
+            const sector = sectorData[sectorCode];
+            if (!sector) return;
+            
+            const panel = document.getElementById('infoPanel');
+            const title = document.getElementById('panelTitle');
+            const content = document.getElementById('panelContent');
+            
+            title.textContent = sector.name;
+            
+            content.innerHTML = `
+                <div class="booth-count-badge" style="background: ${sector.color};">
+                    📍 ${sector.boothCount} Exhibition Booths Available
+                </div>
+                
+                <div class="sector-description">
+                    ${sector.description}
+                </div>
+                
+                <div class="booth-ranges">
+                    <h4>📋 Available Booth Ranges:</h4>
+                    <div class="booth-grid">
+                        ${sector.ranges.map(range => `<div class="booth-item">${range}</div>`).join('')}
+                    </div>
+                </div>
+                
+                <div class="contact-info" style="background: ${sector.color};">
+                    <strong>💡 Interested in this sector?</strong><br><br>
+                    Contact the organizers for booth booking and pricing information<br><br>
+                    <strong>Sector Code: ${sectorCode}</strong>
+                </div>
+            `;
+            
+            panel.classList.add('active');
+            console.log(`${sectorCode} panel opened`);
+        }
+        
+        // Africa Hall function (existing)
+        function showAfricaHall() {
+            const panel = document.getElementById('infoPanel');
+            const title = document.getElementById('panelTitle');
+            const content = document.getElementById('panelContent');
+            
+            title.textContent = 'AFRICA HALL - Booth Layout';
+            
+            content.innerHTML = `
+                <div class="booth-count-badge" style="background: #c0392b;">
+                    🏛️ Africa Hall - 58 Exhibition Booths Available
+                </div>
+                
+                <div class="sector-description">
+                    Africa Hall is a premium exhibition space featuring both 6m² and 9m² booth options. 
+                    This hall is ideal for showcasing African products, culture, and business opportunities.
+                </div>
+                
+                <div class="hall-layout">
+                    <h4>📐 Hall Layout & Booth Distribution</h4>
+                    <img src="DIM_AFRICAHALL15mx50m-1.png" 
+                         alt="Africa Hall Layout" 
+                         class="hall-image" />
+                </div>
+                
+                <div class="booth-info">
+                    <h4>🎯 Available Booth Types</h4>
+                    <div class="booth-types">
+                        <div class="booth-type size-6">
+                            <h5>6m² Booths</h5>
+                            <p><strong>26 Booths Available</strong></p>
+                            <p>Perfect for startups and small businesses</p>
+                            <small>Booths: S017-S042</small>
+                        </div>
+                        <div class="booth-type size-9">
+                            <h5>9m² Booths</h5>
+                            <p><strong>32 Booths Available</strong></p>
+                            <p>Ideal for established companies</p>
+                            <small>Booths: N001-N016, N043-N058</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="booth-ranges">
+                    <h4>📋 Available Booth Numbers</h4>
+                    
+                    <h5 style="color: #27ae60; margin: 15px 0 10px 0;">6m² Booths (Green)</h5>
+                    <div class="booth-grid">
+                        ${generateBoothNumbers('S', 17, 42, 'size-6')}
+                    </div>
+                    
+                    <h5 style="color: #e74c3c; margin: 15px 0 10px 0;">9m² Booths (Pink)</h5>
+                    <div class="booth-grid">
+                        ${generateBoothNumbers('N', 1, 16, 'size-9')}
+                        ${generateBoothNumbers('N', 43, 58, 'size-9')}
+                    </div>
+                </div>
+                
+                <div class="contact-info" style="background: #c0392b;">
+                    <strong>🏛️ Interested in Africa Hall?</strong><br><br>
+                    Africa Hall offers premium positioning and excellent visibility for your exhibition.<br><br>
+                    <strong>Contact organizers for booking and pricing</strong>
+                </div>
+            `;
+            
+            panel.classList.add('active');
+            console.log('Africa Hall panel opened');
+        }
+        
+        // Hall A function  
+        function showHallA() {
+            const panel = document.getElementById('infoPanel');
+            const title = document.getElementById('panelTitle');
+            const content = document.getElementById('panelContent');
+            
+            title.textContent = 'HALL A - Booth Layout';
+            
+            content.innerHTML = `
+                <div class="booth-count-badge" style="background: #8e44ad;">
+                    🏛️ Hall A - 47 Exhibition Booths Available
+                </div>
+                
+                <div class="sector-description">
+                    Hall A is a spacious exhibition hall featuring exclusively 9m² booth spaces. 
+                    This hall provides excellent visibility and accessibility for medium to large exhibitors.
+                </div>
+                
+                <div class="hall-layout">
+                    <h4>📐 Hall Layout & Booth Distribution</h4>
+                     <img src="DIMENSIONED_HALLA25mx30m-1.png" 
+                         alt="HALL A - Booth Layout" 
+                         class="hall-image" />
+                    <p>Hall A features a systematic layout with all 9m² booth spaces arranged for optimal traffic flow.</p>
+                </div>
+                
+                <div class="booth-info">
+                    <h4>🎯 Available Booth Types</h4>
+                    <div class="booth-types">
+                        <div class="booth-type size-9" style="grid-column: 1 / -1;">
+                            <h5>9m² Booths Only</h5>
+                            <p><strong>47 Booths Available</strong></p>
+                            <p>Ideal for established companies and larger displays</p>
+                            <small>Booths: N001-N047</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="booth-ranges">
+                    <h4>📋 Available Booth Numbers</h4>
+                    
+                    <h5 style="color: #8e44ad; margin: 15px 0 10px 0;">9m² Booths</h5>
+                    <div class="booth-grid">
+                        ${generateBoothNumbers('N', 1, 47, 'size-9')}
+                    </div>
+                </div>
+                
+                <div class="contact-info" style="background: #8e44ad;">
+                    <strong>🏛️ Interested in Hall A?</strong><br><br>
+                    Hall A offers premium positioning with spacious 9m² booths for your exhibition.<br><br>
+                    <strong>Contact organizers for booking and pricing</strong>
+                </div>
+            `;
+            
+            panel.classList.add('active');
+            console.log('Hall A panel opened');
+        }
+        
+        // Hall B function
+        function showHallB() {
+            const panel = document.getElementById('infoPanel');
+            const title = document.getElementById('panelTitle');
+            const content = document.getElementById('panelContent');
+            
+            title.textContent = 'HALL B - Booth Layout';
+            
+            content.innerHTML = `
+                <div class="booth-count-badge" style="background: #27ae60;">
+                    🏛️ Hall B - 97 Exhibition Booths Available
+                </div>
+                
+                <div class="sector-description">
+                    Hall B is the largest exhibition hall featuring exclusively 9m² booth spaces. 
+                    This hall is ideal for major exhibitions with high visitor traffic and premium positioning.
+                </div>
+                
+                <div class="hall-layout">
+                    <h4>📐 Hall Layout & Booth Distribution</h4>
+                       <img src="DIMENSIONED_HALLB25mx55m-1.png" 
+                         alt="HALL B - Booth Layout" 
+                         class="hall-image" />
+                    <p>Hall B features a comprehensive layout with 97 strategically positioned 9m² booth spaces.</p>
+                </div>
+                
+                <div class="booth-info">
+                    <h4>🎯 Available Booth Types</h4>
+                    <div class="booth-types">
+                        <div class="booth-type size-9" style="grid-column: 1 / -1;">
+                            <h5>9m² Booths Only</h5>
+                            <p><strong>97 Booths Available</strong></p>
+                            <p>Perfect for large companies and comprehensive displays</p>
+                            <small>Booths: N001-N097</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="booth-ranges">
+                    <h4>📋 Available Booth Numbers</h4>
+                    
+                    <h5 style="color: #27ae60; margin: 15px 0 10px 0;">9m² Booths</h5>
+                    <div class="booth-grid">
+                        ${generateBoothNumbers('N', 1, 97, 'size-9')}
+                    </div>
+                </div>
+                
+                <div class="contact-info" style="background: #27ae60;">
+                    <strong>🏛️ Interested in Hall B?</strong><br><br>
+                    Hall B offers the largest exhibition space with premium 9m² booths.<br><br>
+                    <strong>Contact organizers for booking and pricing</strong>
+                </div>
+            `;
+            
+            panel.classList.add('active');
+            console.log('Hall B panel opened');
+        }
+        
+        // International Hall function
+        function showInternationalHall() {
+            const panel = document.getElementById('infoPanel');
+            const title = document.getElementById('panelTitle');
+            const content = document.getElementById('panelContent');
+            
+            title.textContent = 'INTERNATIONAL HALL - Booth Layout';
+            
+            content.innerHTML = `
+                <div class="booth-count-badge" style="background: #f39c12;">
+                    🏛️ International Hall - 58 Exhibition Booths Available
+                </div>
+                
+                <div class="sector-description">
+                    International Hall is designed for global exhibitors featuring both 6m² and 9m² booth options. 
+                    This hall specializes in international business opportunities and cross-border trade.
+                </div>
+                
+                
+                <div class="hall-layout">
+                    <h4>📐 Hall Layout & Booth Distribution</h4>
+                     <img src="DIM_INTERNATIONALHALL15mx50m-1.png" 
+                         alt="HALL B - Booth Layout" 
+                         class="hall-image" />
+                    <p>International Hall mirrors the Africa Hall layout with mixed booth sizes for diverse exhibitor needs.</p>
+                </div>
+                
+                <div class="booth-info">
+                    <h4>🎯 Available Booth Types</h4>
+                    <div class="booth-types">
+                        <div class="booth-type size-6">
+                            <h5>6m² Booths</h5>
+                            <p><strong>26 Booths Available</strong></p>
+                            <p>Perfect for international startups</p>
+                            <small>Booths: S017-S042</small>
+                        </div>
+                        <div class="booth-type size-9">
+                            <h5>9m² Booths</h5>
+                            <p><strong>32 Booths Available</strong></p>
+                            <p>Ideal for established international companies</p>
+                            <small>Booths: N001-N016, N043-N058</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="booth-ranges">
+                    <h4>📋 Available Booth Numbers</h4>
+                    
+                    <h5 style="color: #27ae60; margin: 15px 0 10px 0;">6m² Booths (Green)</h5>
+                    <div class="booth-grid">
+                        ${generateBoothNumbers('S', 17, 42, 'size-6')}
+                    </div>
+                    
+                    <h5 style="color: #e74c3c; margin: 15px 0 10px 0;">9m² Booths (Pink)</h5>
+                    <div class="booth-grid">
+                        ${generateBoothNumbers('N', 1, 16, 'size-9')}
+                        ${generateBoothNumbers('N', 43, 58, 'size-9')}
+                    </div>
+                </div>
+                
+                <div class="contact-info" style="background: #f39c12;">
+                    <strong>🏛️ Interested in International Hall?</strong><br><br>
+                    International Hall offers premier positioning for global exhibitors.<br><br>
+                    <strong>Contact organizers for booking and pricing</strong>
+                </div>
+            `;
+            
+            panel.classList.add('active');
+            console.log('International Hall panel opened');
+        }
+        
+        // Generate booth numbers helper function
+        function generateBoothNumbers(prefix, start, end, className) {
+            let html = '';
+            for (let i = start; i <= end; i++) {
+                const paddedNumber = i.toString().padStart(3, '0');
+                html += `<div class="booth-item ${className}">${prefix}${paddedNumber}</div>`;
+            }
+            return html;
+        }
+        
+        function closeInfoPanel() {
+            document.getElementById('infoPanel').classList.remove('active');
+            console.log('Info panel closed');
+        }
+        
+        // Close panel when clicking outside
+        document.addEventListener('click', function(e) {
+            const panel = document.getElementById('infoPanel');
+            const svg = document.getElementById('svgOverlay');
+            
+            if (!panel.contains(e.target) && !svg.contains(e.target)) {
+                closeInfoPanel();
+            }
+        });
+        
+        // Initialize
+        console.log('🏛️ Comprehensive Trade Fair Interactive Site Plan Loaded');
+        console.log('📊 8 Sectors + 4 Detailed Halls Available');
+        console.log('🎯 Click debug button to see all sector outlines');
+        console.log('📍 Click coordinate button to track mouse position');
+        console.log('🖱️ Click any colored area to view detailed information');
+    </script>
+</body>
+</html>
