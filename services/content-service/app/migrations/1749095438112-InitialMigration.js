@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.InitialMigration1749095438112 = void 0;
 class InitialMigration1749095438112 {
     constructor() {
-        this.name = 'InitialMigration1749095438112';
+        this.name = "InitialMigration1749095438112";
     }
     async up(queryRunner) {
         await queryRunner.query(`
@@ -12,7 +12,6 @@ class InitialMigration1749095438112 {
                 "section_key" character varying(100) NOT NULL,
                 "title" character varying(200) NOT NULL,
                 "content" text NOT NULL,
-                "image_url" character varying(500),
                 "metadata" json,
                 "is_active" boolean NOT NULL DEFAULT true,
                 "display_order" integer NOT NULL DEFAULT '0',

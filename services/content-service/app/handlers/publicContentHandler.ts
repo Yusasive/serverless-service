@@ -96,7 +96,7 @@ export const handler = async (
     const controller = new ContentController();
     const { httpMethod, pathParameters } = event;
 
-    const routePath = (event.path || "").replace(/^\/public/, "") || "";
+    const routePath = event.path || "";
 
     console.log("Public content routing:", {
       httpMethod,
@@ -125,10 +125,7 @@ export const handler = async (
           debug: {
             method: httpMethod,
             path: routePath,
-            availableRoutes: [
-              "GET /public",
-              "GET /public/section/{section_key}",
-            ],
+            availableRoutes: ["GET /", "GET /section/{section_key}"],
           },
         }),
       };

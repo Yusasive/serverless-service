@@ -22,6 +22,6 @@ export const AppDataSource = new DataSource({
       ? { rejectUnauthorized: false }
       : false,
   entities: [ContentSection, ContentItem, Testimonial, FAQ],
-  migrations: [__dirname + '/../migrations/*.js'],
+  migrations: process.env.NODE_ENV === "prod" || process.env.NODE_ENV === "dev" ? [__dirname + '/../migrations/*.js'] : [__dirname + '/../migrations/*.ts'],
   subscribers: [],
 });

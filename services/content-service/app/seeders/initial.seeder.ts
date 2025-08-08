@@ -557,6 +557,7 @@ Key Features:
 
 The Fair brings into focus the full potentials and business opportunities existing in Nigeria, with eminent dignitaries and policy makers attending throughout its duration.`,
         },
+        hero_image_url: "/images/about.jpg",
         display_order: 11,
       });
 

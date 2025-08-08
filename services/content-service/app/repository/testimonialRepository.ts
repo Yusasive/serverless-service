@@ -35,7 +35,7 @@ export class TestimonialRepository {
   async create(data: Partial<Testimonial>): Promise<Testimonial> {
     const testimonial = this.repository.create({
       ...data,
-      image_base64: data.image_base64 ?? "",
+      image_url: data.image_url ?? "",
     });
     return await this.repository.save(testimonial);
   }
@@ -46,7 +46,7 @@ export class TestimonialRepository {
   ): Promise<Testimonial | null> {
     const updatedData: Partial<Testimonial> = {
       ...data,
-      image_base64: data.image_base64 ?? "",
+      image_url: data.image_url ?? "",
     };
     await this.repository.update(id, updatedData);
     return await this.findById(id);

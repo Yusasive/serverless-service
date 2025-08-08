@@ -23,9 +23,6 @@ export class Testimonial {
   @Column({ type: "varchar", length: 500, nullable: true })
   image_url!: string;
 
-  @Column({ type: "text", nullable: true })
-  image_base64!: string;
-
   @Column({ type: "varchar", length: 50, nullable: true })
   date!: string;
 

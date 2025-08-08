@@ -10,7 +10,6 @@ export class InitialMigration1749095438112 implements MigrationInterface {
                 "section_key" character varying(100) NOT NULL,
                 "title" character varying(200) NOT NULL,
                 "content" text NOT NULL,
-                "image_url" character varying(500),
                 "metadata" json,
                 "is_active" boolean NOT NULL DEFAULT true,
                 "display_order" integer NOT NULL DEFAULT '0',

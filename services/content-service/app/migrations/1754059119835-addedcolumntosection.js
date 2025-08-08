@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Addedcolumntosection1754059119835 = void 0;
 class Addedcolumntosection1754059119835 {
     constructor() {
-        this.name = 'Addedcolumntosection1754059119835';
+        this.name = "Addedcolumntosection1754059119835";
     }
     async up(queryRunner) {
         await queryRunner.query(`ALTER TABLE "content_sections" ADD "image_base64" text`);

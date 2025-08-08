@@ -26,9 +26,6 @@ export class ContentItem {
   @Column({ type: "varchar", length: 500, nullable: true })
   image_url!: string;
 
-  @Column({ type: "text", nullable: true })
-  image_base64?: string;
-
   @Column({ type: "varchar", length: 500, nullable: true })
   link_url!: string;
 

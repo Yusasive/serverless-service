@@ -45,10 +45,10 @@ functions:
     handler: app/handlers/publicContentHandler.handler
     events:
       - httpApi:
-          path: /public
+          path: /
           method: ANY
       - httpApi:
-          path: /public/{proxy+}
+          path: /{proxy+}
           method: ANY
 
   sections:

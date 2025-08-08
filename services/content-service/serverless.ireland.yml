@@ -18,12 +18,12 @@ provider:
       allowedOrigins:
         - ${ssm:/litf-${opt:stage, 'dev'}/client-ui}
         - ${ssm:/litf-${opt:stage, 'dev'}/admin-ui}
-        - ${ssm:/litf-${opt:stage, 'dev'}/base-url} 
+        - ${ssm:/litf-${opt:stage, 'dev'}/base-url}
       allowedMethods:
         - GET
         - POST
         - PUT
-        - PATCH 
+        - PATCH
         - DELETE
         - OPTIONS
       allowedHeaders:
@@ -50,7 +50,7 @@ provider:
     CLOUDFRONT_DOMAIN: ${ssm:/litf-${opt:stage, 'dev'}/cloudfront-uploads-domain, ''}
     CLOUDFRONT_PRIVATE_KEY: ${ssm:/litf-${opt:stage, 'dev'}/cloudfront-private-key, ''}
     CLOUDFRONT_KEY_PAIR_ID: ${ssm:/litf-${opt:stage, 'dev'}/cloudfront-key-pair-id, ''}
-    API_DOMAIN_NAME: ${ssm:/litf-${opt:stage, 'dev'}/base-domain} 
+    API_DOMAIN_NAME: ${ssm:/litf-${opt:stage, 'dev'}/base-domain}
     # SNS_TOPIC: ${env:SNS_TOPIC, 'arn:aws:sns:eu-central-1:123456789012:CustomerTopic'}
     # NOTIFY_TOPIC: ${env:NOTIFY_TOPIC, 'arn:aws:sns:eu-central-1:123456789012:NotifyTopic'}
   # Commenting out IAM roles - likely culprit
@@ -65,7 +65,7 @@ provider:
         - "s3:PutObjectAcl"
         - "s3:DeleteObject"
         - "s3:GetObject"
-      Resource: 
+      Resource:
         - "arn:aws:s3:::litf-*-frontend/*"
         - "arn:aws:s3:::litf-*-frontend"
         - "arn:aws:s3:::litf-*-uploads/*"
@@ -80,17 +80,17 @@ provider:
 
 package:
   patterns:
-    - '!node_modules/**'
-    - '!**/*.test.ts'
-    - '!**/*.spec.ts'
-    - '!**/__tests__/**'
-    - '!**/.git/**'
-    - '!**/.vscode/**'
-    - '!**/coverage/**'
-    - '!**/.nyc_output/**'
-    - '!**/.serverless/**'
-    - '!**/undefined/**'
-    - 'app/**'
+    - "!node_modules/**"
+    - "!**/*.test.ts"
+    - "!**/*.spec.ts"
+    - "!**/__tests__/**"
+    - "!**/.git/**"
+    - "!**/.vscode/**"
+    - "!**/coverage/**"
+    - "!**/.nyc_output/**"
+    - "!**/.serverless/**"
+    - "!**/undefined/**"
+    - "app/**"
 
 build:
   esbuild:
@@ -99,17 +99,17 @@ build:
     target: node18
     external:
       - aws-sdk
-      - '@aws-sdk/*'
+      - "@aws-sdk/*"
 
 functions:
   publicContent:
     handler: app/handlers/publicContentHandler.handler
     events:
       - httpApi:
-          path: /public
+          path: /
           method: ANY
       - httpApi:
-          path: /public/{proxy+}
+          path: /{proxy+}
           method: ANY
 
   sections:
@@ -191,52 +191,12 @@ functions:
           path: /page-contents
           method: ANY
 
-resources: 
+resources:
   Resources:
-     ContentAPIMapping:
+    ContentAPIMapping:
       Type: AWS::ApiGatewayV2::ApiMapping
       Properties:
         ApiId: ${cf:${self:service}-${sls:stage}.HttpApiId}
         DomainName: ${self:provider.environment.API_DOMAIN_NAME}
-        Stage: '$default'
-        ApiMappingKey: public
-
-    SectionsAPIMapping:
-      Type: AWS::ApiGatewayV2::ApiMapping
-      Properties:
-        ApiId: ${cf:${self:service}-${sls:stage}.HttpApiId}
-        DomainName: ${self:provider.environment.API_DOMAIN_NAME}
-        Stage: '$default'
-        ApiMappingKey: sections
-
-    ItemsAPIMapping:
-      Type: AWS::ApiGatewayV2::ApiMapping
-      Properties:
-        ApiId: ${cf:${self:service}-${sls:stage}.HttpApiId}
-        DomainName: ${self:provider.environment.API_DOMAIN_NAME}
-        Stage: '$default'
-        ApiMappingKey: items
-
-    TestimonialsAPIMapping:
-      Type: AWS::ApiGatewayV2::ApiMapping
-      Properties:
-        ApiId: ${cf:${self:service}-${sls:stage}.HttpApiId}
-        DomainName: ${self:provider.environment.API_DOMAIN_NAME}
-        Stage: '$default'
-        ApiMappingKey: testimonials
-
-    FaqsAPIMapping:
-      Type: AWS::ApiGatewayV2::ApiMapping
-      Properties:
-        ApiId: ${cf:${self:service}-${sls:stage}.HttpApiId}
-        DomainName: ${self:provider.environment.API_DOMAIN_NAME}
-        Stage: '$default'
-        ApiMappingKey: faqs
-
-    MediaAPIMapping:
-      Type: AWS::ApiGatewayV2::ApiMapping
-      Properties:
-        ApiId: ${cf:${self:service}-${sls:stage}.HttpApiId}
-        DomainName: ${self:provider.environment.API_DOMAIN_NAME}
-        Stage: '$default'
-        ApiMappingKey: media
+        Stage: "$default"
+        ApiMappingKey: content
